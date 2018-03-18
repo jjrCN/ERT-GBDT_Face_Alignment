@@ -4,6 +4,9 @@ One Millisecond Face Alignment with an Ensemble of Regression Trees
 This is a implementation of the face alignment method(ERT) by Jia Jinrang. And it has been first implemented by FeiLee1992 in 2017. 
 If useful to you, please star to support my work. Thanks.
 
+##**About the model:**
+Because the Github limits the size of file(can not be larger than 100M), so we can not updata our trained-well model. If needed, please contact me through the E-mail: jjr5401@163.com
+
 ##**Configuration Environment:**
 
 ubuntu + cv2 + boost
