@@ -3,6 +3,7 @@ set(source
     )
     
 add_executable(ERT_Test ${source})
+add_dependencies(ERT_Test ${DEPENDENCY_LIST})
 
 target_include_directories(ERT_Test PUBLIC
     ${OpenCV_DIR}/include
