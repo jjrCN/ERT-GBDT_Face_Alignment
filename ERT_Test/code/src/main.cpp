@@ -228,7 +228,7 @@ int main(int argc, char* argv[])
 	int u_value, v_value;
 	int index = 0;
 
-	std::string haar_feature = "../haarcascade_frontalface_alt2.xml";
+	std::string haar_feature = "./facedetection/haarcascade_frontalface_alt2.xml";
 	cv::CascadeClassifier haar_cascade;
 	haar_cascade.load(haar_feature);
 	std::cout << "load face detector completed." << std::endl;

@@ -85,14 +85,14 @@ float tree::splite_node(std::vector<sample> &data, const float &u_x, const float
 
 			//std::cout << i << std::endl;
 			
-			if(u_data_unnormalization(0, 0) < 0 || u_data_unnormalization(0, 0) > data[i].image.cols || 
-				u_data_unnormalization(0, 1) < 0 || u_data_unnormalization(0, 1) > data[i].image.rows)
+			if(u_data_unnormalization(0, 0) < 0 || u_data_unnormalization(0, 0) >= data[i].image.cols || 
+				u_data_unnormalization(0, 1) < 0 || u_data_unnormalization(0, 1) >= data[i].image.rows)
 				u_value = 0;
 			else
 				u_value = data[i].image.at<uchar>((int)u_data_unnormalization(0, 1), (int)u_data_unnormalization(0, 0));
 
-			if(v_data_unnormalization(0, 0) < 0 || v_data_unnormalization(0, 0) > data[i].image.cols || 
-				v_data_unnormalization(0, 1) < 0 || v_data_unnormalization(0, 1) > data[i].image.rows)
+			if(v_data_unnormalization(0, 0) < 0 || v_data_unnormalization(0, 0) >= data[i].image.cols || 
+				v_data_unnormalization(0, 1) < 0 || v_data_unnormalization(0, 1) >= data[i].image.rows)
 				v_value = 0;
 			else
 				v_value = data[i].image.at<uchar>((int)v_data_unnormalization(0, 1), (int)v_data_unnormalization(0, 0));

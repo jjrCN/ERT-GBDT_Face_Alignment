@@ -30,9 +30,9 @@ int main(int argc, char* argv[])
 	int tree_depth = 5;
 	int feature_number_of_node = 20;
 	int feature_pool_size = 400;
-	float shrinkage_factor = 0.1;
-	float padding = 0.1;
-	float lamda = 0.1;
+	float shrinkage_factor = 0.1f;
+	float padding = 0.1f;
+	float lamda = 0.1f;
 
 	ERT FaceAlignmentOperator(cascade_number, tree_number, multiple_trees_number, tree_depth, 
 		feature_number_of_node, feature_pool_size, shrinkage_factor, padding, initialization, lamda);
