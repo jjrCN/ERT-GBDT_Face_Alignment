@@ -1,16 +1,20 @@
 #include <ERT.hpp>
+#include <ghc/filesystem.hpp>
+#include <chrono>
+
+namespace fs = ghc::filesystem;
 
 int main(int argc, char* argv[])
 {
-	std::srand(std::time(0));
+	std::srand((uint32_t)std::chrono::high_resolution_clock::now().time_since_epoch().count());
 //============load image======================//
 	std::cout << "[Stage 1] Loading image" << std::endl;
 	std::vector<sample> traindata;
-	std::string trainpath = "./../../../dataset/lfpw/trainset/";
+	std::string trainpath = "./dataset/lfpw/trainset/";
 	Loadimages(traindata, trainpath);
 
 	std::vector<sample> validationdata;
-	std::string validationpath = "./../../../dataset/lfpw/testset/";
+	std::string validationpath = "./dataset/lfpw/testset/";
 	Loadimages(validationdata, validationpath);
 
 //============data preprocessing==============//
@@ -35,18 +39,19 @@ int main(int argc, char* argv[])
 
 	FaceAlignmentOperator.train(traindata, validationdata);
 
-	std::string model_file_path = "./../model/ERT_jjr.xml";
+	std::string model_file_path = "./result/model/ERT_jjr.xml";
 	FaceAlignmentOperator.save(model_file_path);
 
-	std::string outputpath_train = "./../train_result";
-	rmdir(outputpath_train.c_str());
-	mkdir(outputpath_train.c_str(), S_IRWXU);
+	std::string outputpath_train = "./result/train_result";
+
+	fs::remove_all(outputpath_train);
+	fs::create_directories(outputpath_train);
 	for(int i = 0; i < traindata.size(); ++i)
 		output(traindata[i], outputpath_train);
 
-	std::string outputpath_vali = "./../validation_result";
-	rmdir(outputpath_vali.c_str());
-	mkdir(outputpath_vali.c_str(), S_IRWXU);
+	std::string outputpath_vali = "./result/validation_result";
+	fs::remove_all(outputpath_vali);
+	fs::create_directories(outputpath_vali);
 	for(int i = 0; i < validationdata.size(); ++i)
 		output(validationdata[i], outputpath_vali);	
 }

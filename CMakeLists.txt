@@ -35,13 +35,10 @@ ExternalProject_Add(
     )
 set(DEPENDENCY_LIST ${DEPENDENCY_LIST} dep-json)
 
-if (CMAKE_BUILD_TYPE MATCHES DEBUG)
-    set(OpenCV_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/../opencv/install-debug)
-else()
-    set(OpenCV_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/../opencv/install)
-endif()
+set(OpenCV_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/../opencv/install-debug)
+# set(OpenCV_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/../opencv/install)
 
-find_package(OpenCV REQUIRED)
+find_package(OpenCV REQUIRED core highgui imgproc objdetect)
 
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 message("opencv dir: ${OpenCV_DIR}/include")

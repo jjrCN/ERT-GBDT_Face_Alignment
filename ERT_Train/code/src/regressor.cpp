@@ -106,9 +106,8 @@ void regressor::show_feature_node(const sample &data)
 
 	for(int i = 0; i < feature_pool_size; ++i)
 	{	
-		
-		float x = temp(i, 0);
-		float y = temp(i, 1);
+		int x = (int)temp(i, 0);
+		int y = (int)temp(i, 1);
 		cv::circle(image, cv::Point(x, y), 3, cv::Scalar(100, 100, 100), -1);
 	}
 

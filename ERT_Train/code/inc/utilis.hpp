@@ -7,8 +7,8 @@
 #include <cmath>
 #include <sstream>
 #include <ctime>
-#include <unistd.h>
-#include <dirent.h>
+// #include <unistd.h>
+// #include <dirent.h>
 #include <iostream>
 #include <fstream>
 #include <opencv2/opencv.hpp>

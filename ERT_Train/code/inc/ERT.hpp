@@ -2,9 +2,9 @@
 #ifndef _ERT_HPP_
 #define _ERT_HPP_
 
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/foreach.hpp>
+// #include <boost/property_tree/ptree.hpp>
+// #include <boost/property_tree/xml_parser.hpp>
+// #include <boost/foreach.hpp>
 #include <string>
 #include <set>
 #include <exception>
@@ -12,7 +12,7 @@
 
 #include <regressor.hpp>
 
-namespace pt = boost::property_tree;
+// namespace pt = boost::property_tree;
 
 class ERT{
 public:

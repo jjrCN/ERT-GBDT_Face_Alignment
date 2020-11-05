@@ -1,4 +1,9 @@
 #include <ERT.hpp>
+#include <ghc/filesystem.hpp>
+#include <nlohmann/json.hpp>
+
+namespace fs = ghc::filesystem;
+using namespace nlohmann;
 
 ERT::ERT(const int &cascade_number, const int &tree_number, const int &multiple_trees_number, const int &tree_depth, 
 		const int &feature_number_of_node, const int &feature_pool_size, const float &shrinkage_factor, const float &padding, const int &initialization, const float &lamda)
@@ -35,7 +40,8 @@ void ERT::compute_mean_landmarks(const std::vector<sample> &data)
 	{
 		global_mean_landmarks += data[i].landmarks_truth_normalizaiotn;
 	}
-	global_mean_landmarks /= (data.size() / initialization);
+	// global_mean_landmarks /= (data.size() / initialization);
+	global_mean_landmarks /= ((float)data.size() / (float)initialization);
 	std::cout << "Compute global mean landmarks finished." << std::endl << std::endl;
 
 }
@@ -58,14 +64,14 @@ void ERT::train(std::vector<sample> &data, std::vector<sample> &validationdata)
 		if(i == 0)
 		{
 			std::string path = "./../train_origin_landmark";
-			rmdir(path.c_str());
-			mkdir(path.c_str(), S_IRWXU);
+			fs::remove_all(path);
+			fs::create_directories(path);
 			for(int j = 0; j < 10; ++j)
 				output(data[j], path);
 
 			path = "./../validation_origin_landmark";
-			rmdir(path.c_str());
-			mkdir(path.c_str(), S_IRWXU);
+			fs::remove_all(path);
+			fs::create_directories(path);
 			for(int j = 0; j < 10; ++j)
 				output(validationdata[j], path);			
 		}
@@ -77,10 +83,10 @@ void ERT::train(std::vector<sample> &data, std::vector<sample> &validationdata)
 		std::string outputpath_train = "./../train_cascade_" + stream.str();
 		std::string outputpath_vali = "./../validation_cascade_" + stream.str();
 
-		rmdir(outputpath_train.c_str());
-		rmdir(outputpath_vali.c_str());
-		mkdir(outputpath_train.c_str(), S_IRWXU);
-		mkdir(outputpath_vali.c_str(), S_IRWXU);
+		fs::remove_all(outputpath_train);
+		fs::remove_all(outputpath_vali);
+		fs::create_directories(outputpath_train);
+		fs::create_directories(outputpath_vali);
 
 		for(int j = 0; j < 10; ++j)
 		{
@@ -96,23 +102,24 @@ void ERT::train(std::vector<sample> &data, std::vector<sample> &validationdata)
 
 void ERT::save(const std::string &path)
 {
-	int root_number = std::pow(2, tree_depth - 1) - 1;
-	int leaf_number = std::pow(2, tree_depth - 1);
+	int root_number = (int)std::pow(2, tree_depth - 1) - 1;
+	int leaf_number = (int)std::pow(2, tree_depth - 1);
 	int landmark_number = global_mean_landmarks.rows;
 
-	pt::ptree tree;
+	json tree;
+	// pt::ptree tree;
 
-	tree.put("ERT.model_name", "ERT by jinrang jia");
-	tree.put("ERT.cascade_number", cascade_number);
-	tree.put("ERT.tree_number", tree_number);
-	tree.put("ERT.multiple_trees_number", multiple_trees_number);
-	tree.put("ERT.tree_depth", tree_depth);
-	tree.put("ERT.landmark_number", landmark_number);
-	tree.put("ERT.feature_number_of_node", feature_number_of_node);
-	tree.put("ERT.feature_pool_size", feature_pool_size);
-	tree.put("ERT.shrinkage_factor", shrinkage_factor);
-	tree.put("ERT.padding", padding);
-	tree.put("ERT.lamda", lamda);
+	tree["ERT.model_name"] = "ERT by jinrang jia";
+	tree["ERT.cascade_number"] = cascade_number;
+	tree["ERT.tree_number"] = tree_number;
+	tree["ERT.multiple_trees_number"] = multiple_trees_number;
+	tree["ERT.tree_depth"] = tree_depth;
+	tree["ERT.landmark_number"] = landmark_number;
+	tree["ERT.feature_number_of_node"] = feature_number_of_node;
+	tree["ERT.feature_pool_size"] = feature_pool_size;
+	tree["ERT.shrinkage_factor"] = shrinkage_factor;
+	tree["ERT.padding"] = padding;
+	tree["ERT.lamda"] = lamda;
 
 	for(int i = 0; i < landmark_number; ++i)
 	{
@@ -121,8 +128,8 @@ void ERT::save(const std::string &path)
 		std::string global_mean_landmarks_path_x = "ERT.parameters.global_mean_landmarks.x_" + stream_global_mean_landmarks.str();
 		std::string global_mean_landmarks_path_y = "ERT.parameters.global_mean_landmarks.y_" + stream_global_mean_landmarks.str();
 
-		tree.put(global_mean_landmarks_path_x, global_mean_landmarks(i, 0));
-		tree.put(global_mean_landmarks_path_y, global_mean_landmarks(i, 1));
+		tree[global_mean_landmarks_path_x] = global_mean_landmarks(i, 0);
+		tree[global_mean_landmarks_path_y] = global_mean_landmarks(i, 1);
 	}
 
 	for(int i = 0; i < cascade_number; ++i)
@@ -145,25 +152,25 @@ void ERT::save(const std::string &path)
 
 			
 				std::string landmark_index1_path = root_node + "landmark_index1";
-				tree.put(landmark_index1_path, regressors[i].trees()[j].model()->splite_model[k].landmark_index1);
+				tree[landmark_index1_path] = regressors[i].trees()[j].model()->splite_model[k].landmark_index1;
 
 				std::string landmark_index2_path = root_node + "landmark_index2";
-				tree.put(landmark_index2_path, regressors[i].trees()[j].model()->splite_model[k].landmark_index2);
+				tree[landmark_index2_path] = regressors[i].trees()[j].model()->splite_model[k].landmark_index2;
 
 				std::string index1_offset_x = root_node + "index1_offset_x";
-				tree.put(index1_offset_x, regressors[i].trees()[j].model()->splite_model[k].index1_offset_x);
+				tree[index1_offset_x] = regressors[i].trees()[j].model()->splite_model[k].index1_offset_x;
 
 				std::string index1_offset_y = root_node + "index1_offset_y";
-				tree.put(index1_offset_y, regressors[i].trees()[j].model()->splite_model[k].index1_offset_y);
+				tree[index1_offset_y] = regressors[i].trees()[j].model()->splite_model[k].index1_offset_y;
 
 				std::string index2_offset_x = root_node + "index2_offset_x";
-				tree.put(index2_offset_x, regressors[i].trees()[j].model()->splite_model[k].index2_offset_x);
+				tree[index2_offset_x] = regressors[i].trees()[j].model()->splite_model[k].index2_offset_x;
 
 				std::string index2_offset_y = root_node + "index2_offset_y";
-				tree.put(index2_offset_y, regressors[i].trees()[j].model()->splite_model[k].index2_offset_y);
+				tree[index2_offset_y] = regressors[i].trees()[j].model()->splite_model[k].index2_offset_y;
 
 				std::string threshold = root_node + "threshold";
-				tree.put(threshold, regressors[i].trees()[j].model()->splite_model[k].threshold);
+				tree[threshold] = regressors[i].trees()[j].model()->splite_model[k].threshold;
 			}
 
 			for(int k = 0; k < leaf_number; ++k)
@@ -179,13 +186,15 @@ void ERT::save(const std::string &path)
 					std::string residual_x = root_node + "x_" + landmark_index.str();
 					std::string residual_y = root_node + "y_" + landmark_index.str();
 
-					tree.put(residual_x, regressors[i].trees()[j].model()->residual_model[k](r, 0));
-					tree.put(residual_y, regressors[i].trees()[j].model()->residual_model[k](r, 1));
+					tree[residual_x] = regressors[i].trees()[j].model()->residual_model[k](r, 0);
+					tree[residual_y] = regressors[i].trees()[j].model()->residual_model[k](r, 1);
 				}
 			}
 		}
 	}
 
-	remove(path.c_str());
-	pt::write_xml(path, tree);
+	fs::remove(path);
+	std::ofstream fout(path);
+	fout << tree.dump(2);
+	fout.close();
 }

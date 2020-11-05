@@ -1,4 +1,7 @@
 #include <utilis.hpp>
+#include <ghc/filesystem.hpp>
+
+namespace fs = ghc::filesystem;
 
 void cut_name(std::string &name, const std::string &name_with_info)
 {
@@ -8,25 +11,11 @@ void cut_name(std::string &name, const std::string &name_with_info)
 
 void getfiles(std::vector<std::string> &names, const std::string &path)
 {
-	DIR* dir;
-	struct dirent *ptr;
-	dir = opendir(path.c_str());
-	if(dir == nullptr)
-	{
-		perror("Open dir error.");
-		exit(1);
+	for (auto p : fs::recursive_directory_iterator(path)) {
+		if (p.is_directory())
+			return;
+		names.push_back(p.path().stem());
 	}
-
-	while((ptr = readdir(dir)) != nullptr)
-	{
-		if(ptr->d_type == 8)
-		{
-			std::string name;
-			cut_name(name, ptr->d_name);
-			names.push_back(name);
-		}
-	}
-	closedir(dir);
 }
 
 bool IsDetected(const cv::Rect &box, const float &x_max, const float &x_min, const float &y_max, const float &y_min)
@@ -60,6 +49,10 @@ void Loadimages(std::vector<sample> &data, const std::string &path)
 	getfiles(images_name, images_path);
 	int images_number = images_name.size();
 	cv::Mat_<uchar> image;
+
+	std::string haar_feature = "./facedetection/haarcascade_frontalface_alt2.xml";
+	cv::CascadeClassifier haar_cascade;
+	haar_cascade.load(haar_feature);
 
 	for(int i = 0; i < images_number; ++i)
 	{
@@ -108,9 +101,6 @@ void Loadimages(std::vector<sample> &data, const std::string &path)
 		}
 
 		std::vector<cv::Rect> faces_temp;
-		std::string haar_feature = "../haarcascade_frontalface_alt2.xml";
-		cv::CascadeClassifier haar_cascade;
-		haar_cascade.load(haar_feature);
 		haar_cascade.detectMultiScale(image, faces_temp, 1.1, 2, 0, cv::Size(30, 30));
 
 		for(int k = 0; k < faces_temp.size(); ++k)
@@ -175,13 +165,13 @@ void check_edge(sample &data)
 	for(int i = 0; i < data.landmarks_truth.rows; ++i)
 	{
 		if(data.landmarks_cur(i, 0) < 0)
-			data.landmarks_cur(i, 0) = 0;
+			data.landmarks_cur(i, 0) = 0.0f;
 		if(data.landmarks_cur(i, 0) >= cols)
-			data.landmarks_cur(i, 0) = cols - 1;
+			data.landmarks_cur(i, 0) = (float)(cols - 1);
 		if(data.landmarks_cur(i, 1) < 0)
-			data.landmarks_cur(i, 1) = 0;
+			data.landmarks_cur(i, 1) = 0.0f;
 		if(data.landmarks_cur(i, 1) >= rows)
-			data.landmarks_cur(i, 1) = rows - 1;
+			data.landmarks_cur(i, 1) = (float)(rows - 1);
 	}
 }
 
@@ -200,10 +190,14 @@ void GenerateValidationdata(std::vector<sample> &data, const cv::Mat_<float> &gl
 
 	for(int i = 0; i < data.size(); ++i)
 	{	
-		origin(0, 0) = data[i].GTBox.x; origin(0, 1) = data[i].GTBox.y;
-		origin(1, 0) = data[i].GTBox.x + data[i].GTBox.width; origin(1, 1) = data[i].GTBox.y;
-		origin(2, 0) = data[i].GTBox.x; origin(2, 1) = data[i].GTBox.y + data[i].GTBox.height;
-		origin(3, 0) = data[i].GTBox.x + data[i].GTBox.width; origin(3, 1) = data[i].GTBox.y + data[i].GTBox.height;
+		origin(0, 0) = (float)(data[i].GTBox.x);
+		origin(0, 1) = (float)(data[i].GTBox.y);
+		origin(1, 0) = (float)(data[i].GTBox.x + data[i].GTBox.width);
+		origin(1, 1) = (float)(data[i].GTBox.y);
+		origin(2, 0) = (float)(data[i].GTBox.x);
+		origin(2, 1) = (float)(data[i].GTBox.y + data[i].GTBox.height);
+		origin(3, 0) = (float)(data[i].GTBox.x + data[i].GTBox.width);
+		origin(3, 1) = (float)(data[i].GTBox.y + data[i].GTBox.height);
 
 		compute_similarity_transform(target, origin, scale_rotate, transform);
 
@@ -242,10 +236,14 @@ void GenerateTraindata(std::vector<sample> &data, const int &initialization)
 
 	for(int i = 0; i < data_size_origin; ++i)
 	{	
-		origin(0, 0) = data[i].GTBox.x; origin(0, 1) = data[i].GTBox.y;
-		origin(1, 0) = data[i].GTBox.x + data[i].GTBox.width; origin(1, 1) = data[i].GTBox.y;
-		origin(2, 0) = data[i].GTBox.x; origin(2, 1) = data[i].GTBox.y + data[i].GTBox.height;
-		origin(3, 0) = data[i].GTBox.x + data[i].GTBox.width; origin(3, 1) = data[i].GTBox.y + data[i].GTBox.height;
+		origin(0, 0) = (float)(data[i].GTBox.x);
+		origin(0, 1) = (float)(data[i].GTBox.y);
+		origin(1, 0) = (float)(data[i].GTBox.x + data[i].GTBox.width);
+		origin(1, 1) = (float)(data[i].GTBox.y);
+		origin(2, 0) = (float)(data[i].GTBox.x);
+		origin(2, 1) = (float)(data[i].GTBox.y + data[i].GTBox.height);
+		origin(3, 0) = (float)(data[i].GTBox.x + data[i].GTBox.width);
+		origin(3, 1) = (float)(data[i].GTBox.y + data[i].GTBox.height);
 
 		compute_similarity_transform(target, origin, scale_rotate, transform);
 
@@ -293,12 +291,12 @@ void output(const sample &data, const std::string &path)
 
 	for(int i = 0; i < data.landmarks_truth.rows; ++i)
 	{
-		float x = data.landmarks_truth(i, 0);
-		float y = data.landmarks_truth(i, 1);
+		auto x = (int)data.landmarks_truth(i, 0);
+		auto y = (int)data.landmarks_truth(i, 1);
 		cv::circle(image, cv::Point(x, y), 1, cv::Scalar(255, 255, 255), -1);
 
-		x = data.landmarks_cur(i, 0);
-		y = data.landmarks_cur(i, 1);
+		x = (int)data.landmarks_cur(i, 0);
+		y = (int)data.landmarks_cur(i, 1);
 		cv::circle(image, cv::Point(x, y), 3, cv::Scalar(0, 0, 0), -1);
 	}
 

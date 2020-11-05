@@ -6,8 +6,8 @@ tree::tree(const int &depth, const int &feature_number_of_node, const float &lam
 	this->feature_number_of_node = feature_number_of_node;
 	this->lamda = lamda;
 
-	this->_root_number = std::pow(2, depth - 1) - 1;
-	this->_leaf_number = std::pow(2, depth - 1);
+	this->_root_number = (int)std::pow(2, depth - 1) - 1;
+	this->_leaf_number = (int)std::pow(2, depth - 1);
 
 	_model.splite_model.resize(_root_number);
 	_model.residual_model.resize(_leaf_number);
@@ -27,7 +27,7 @@ void tree::generate_candidate_feature(const cv::Mat_<float> &feature_pool, const
 	 	do{
 	 		_x_index = std::rand() % landmark_index.size();
 	 		_y_index = std::rand() % landmark_index.size();
-	 		distance = std::pow(feature_pool(_x_index, 0) - feature_pool(_y_index, 0), 2) + std::pow(feature_pool(_x_index, 1) - feature_pool(_y_index, 1), 2);		
+	 		distance = std::pow(feature_pool(_x_index, 0) - feature_pool(_y_index, 0), 2) + std::pow(feature_pool(_x_index, 1) - feature_pool(_y_index, 1), 2);
 	 		prob = std::exp(-distance / lamda);
 	 		prob_threshold = std::rand() / (float)(RAND_MAX);
 	 	}while(_x_index == _y_index || prob <= prob_threshold);
@@ -40,7 +40,7 @@ void tree::generate_candidate_feature(const cv::Mat_<float> &feature_pool, const
 	 	candidate_feature_offset(2 * i + 1, 0) = offset(_y_index, 0);
 	 	candidate_feature_offset(2 * i + 1, 1) = offset(_y_index, 1);
 
-	 	threshold[i] = ((std::rand() / (RAND_MAX + 1.0) * std::numeric_limits<uchar>::max()) -128) / 2;
+	 	threshold[i] = (float)(((std::rand() / (RAND_MAX + 1.0) * std::numeric_limits<uchar>::max()) - 128) / 2.0);
 	 }
 }
 
@@ -122,8 +122,8 @@ float tree::splite_node(std::vector<sample> &data, const float &u_x, const float
 	{
 		mean_left /= left_number;
 		mean_right /= right_number;
-		score_left = left_number * mean_left.dot(mean_left);
-		score_right = right_number * mean_right.dot(mean_right);
+		score_left = left_number * (float)mean_left.dot(mean_left);
+		score_right = right_number * (float)mean_right.dot(mean_right);
 
 		return score_left + score_right;
 	}

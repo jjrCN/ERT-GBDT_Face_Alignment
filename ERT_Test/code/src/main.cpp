@@ -1,6 +1,5 @@
 #include <cmath>
 #include <sstream>
-#include <ctime>
 #include <iostream>
 
 #include <opencv2/opencv.hpp>
@@ -8,14 +7,14 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/foreach.hpp>
 #include <string>
 #include <set>
 #include <exception>
 
-namespace pt = boost::property_tree;
+#include <nlohmann/json.hpp>
+#include <chrono>
+
+using namespace nlohmann;
 
 class UnLeafNode{
 public:
@@ -101,22 +100,25 @@ void normalization2(cv::Mat_<float> &target, const cv::Mat_<float> &origin, cons
 
 int main(int argc, char* argv[])
 {
-	std::srand(std::time(0));
+	std::srand((uint32_t)std::chrono::high_resolution_clock::now().time_since_epoch().count());
 
-	std::string model_path = "./../model/ERT.xml";
-	pt::ptree tree_xml;
-	pt::read_xml(model_path, tree_xml);
+	std::string model_path = "./../model/ERT.json";
+	std::ifstream fin(model_path);
+	json tree_json;
+	fin >> tree_json;
+	fin.close();
+
 	std::cout << "open model." << std::endl;
 
-	int cascade_number = tree_xml.get<int>("ERT.cascade_number");
-	int tree_number = tree_xml.get<int>("ERT.tree_number");
-	int multiple_trees_number = tree_xml.get<int>("ERT.multiple_trees_number");
-	int tree_depth = tree_xml.get<int>("ERT.tree_depth");
-	int landmark_number = tree_xml.get<int>("ERT.landmark_number");
-	float shrinkage_factor = tree_xml.get<float>("ERT.shrinkage_factor");
+	int cascade_number = tree_json["ERT.cascade_number"].get<int>();
+	int tree_number = tree_json["ERT.tree_number"].get<int>();
+	int multiple_trees_number = tree_json["ERT.multiple_trees_number"].get<int>();
+	int tree_depth = tree_json["ERT.tree_depth"].get<int>();
+	int landmark_number = tree_json["ERT.landmark_number"].get<int>();
+	float shrinkage_factor = tree_json["ERT.shrinkage_factor"].get<float>();
 
-	int root_number = std::pow(2, tree_depth - 1) - 1;
-	int leaf_number = std::pow(2, tree_depth - 1);
+	int root_number = (int)(std::pow(2, tree_depth - 1) - 1);
+	int leaf_number = (int)(std::pow(2, tree_depth - 1));
 
 	cv::Mat_<float> global_mean_landmarks(landmark_number, 2);
 	for(int i = 0; i < landmark_number; ++i)
@@ -126,8 +128,8 @@ int main(int argc, char* argv[])
 		std::string global_mean_landmarks_path_x = "ERT.parameters.global_mean_landmarks.x_" + stream_global_mean_landmarks.str();
 		std::string global_mean_landmarks_path_y = "ERT.parameters.global_mean_landmarks.y_" + stream_global_mean_landmarks.str();
 
-		global_mean_landmarks(i, 0) = tree_xml.get<float>(global_mean_landmarks_path_x);
-		global_mean_landmarks(i, 1) = tree_xml.get<float>(global_mean_landmarks_path_y);
+		global_mean_landmarks(i, 0) = tree_json[global_mean_landmarks_path_x].get<float>();
+		global_mean_landmarks(i, 1) = tree_json[global_mean_landmarks_path_y].get<float>();
 	}
 
 	std::vector<std::vector<TreeModel> > regressors(cascade_number);
@@ -162,15 +164,15 @@ int main(int argc, char* argv[])
 				std::string index2_offset_y = root_node + "index2_offset_y";
 				std::string threshold = root_node + "threshold";
  
-				tree.splite_model[k].landmark_index1 = tree_xml.get<int>(landmark_index1_path);
-				tree.splite_model[k].landmark_index2 = tree_xml.get<int>(landmark_index2_path);
+				tree.splite_model[k].landmark_index1 = tree_json[landmark_index1_path].get<int>();
+				tree.splite_model[k].landmark_index2 = tree_json[landmark_index2_path].get<int>();
 				tree.splite_model[k].index1_offset = cv::Mat_<float>::zeros(1, 2);
 				tree.splite_model[k].index2_offset = cv::Mat_<float>::zeros(1, 2);
-				tree.splite_model[k].index1_offset(0, 0) = tree_xml.get<float>(index1_offset_x);
-				tree.splite_model[k].index1_offset(0, 1) = tree_xml.get<float>(index1_offset_y);
-				tree.splite_model[k].index2_offset(0, 0) = tree_xml.get<float>(index2_offset_x);
-				tree.splite_model[k].index2_offset(0, 1) = tree_xml.get<float>(index2_offset_y);
-				tree.splite_model[k].threshold = tree_xml.get<float>(threshold);
+				tree.splite_model[k].index1_offset(0, 0) = tree_json[index1_offset_x].get<float>();
+				tree.splite_model[k].index1_offset(0, 1) = tree_json[index1_offset_y].get<float>();
+				tree.splite_model[k].index2_offset(0, 0) = tree_json[index2_offset_x].get<float>();
+				tree.splite_model[k].index2_offset(0, 1) = tree_json[index2_offset_y].get<float>();
+				tree.splite_model[k].threshold = tree_json[threshold].get<float>();
 			}
 
 			for(int k = 0; k < leaf_number; ++k)
@@ -188,8 +190,8 @@ int main(int argc, char* argv[])
 					std::string residual_x = root_node + "x_" + landmark_index.str();
 					std::string residual_y = root_node + "y_" + landmark_index.str();
 
-					leaf_node_data(r, 0) = tree_xml.get<float>(residual_x);
-					leaf_node_data(r, 1) = tree_xml.get<float>(residual_y);
+					leaf_node_data(r, 0) = tree_json[residual_x].get<float>();
+					leaf_node_data(r, 1) = tree_json[residual_y].get<float>();
 				}
 				tree.residual_model[k] = leaf_node_data.clone();
 			}
@@ -269,10 +271,14 @@ int main(int argc, char* argv[])
 		if(!faces_temp.empty())
 		{
 			GTBox_Rect = faces_temp[0];
-			GTBox(0, 0) = GTBox_Rect.x; GTBox(0, 1) = GTBox_Rect.y;
-			GTBox(1, 0) = GTBox_Rect.x + GTBox_Rect.width; GTBox(1, 1) = GTBox_Rect.y;
-			GTBox(2, 0) = GTBox_Rect.x; GTBox(2, 1) = GTBox_Rect.y + GTBox_Rect.height;
-			GTBox(3, 0) = GTBox_Rect.x + GTBox_Rect.width; GTBox(3, 1) = GTBox_Rect.y + GTBox_Rect.height;
+			GTBox(0, 0) = (float)(GTBox_Rect.x);
+			GTBox(0, 1) = (float)(GTBox_Rect.y);
+			GTBox(1, 0) = (float)(GTBox_Rect.x + GTBox_Rect.width);
+			GTBox(1, 1) = (float)(GTBox_Rect.y);
+			GTBox(2, 0) = (float)(GTBox_Rect.x);
+			GTBox(2, 1) = (float)(GTBox_Rect.y + GTBox_Rect.height);
+			GTBox(3, 0) = (float)(GTBox_Rect.x + GTBox_Rect.width);
+			GTBox(3, 1) = (float)(GTBox_Rect.y + GTBox_Rect.height);
 			cv::Mat_<float> landmarks_cur_normalization = global_mean_landmarks.clone();
 			time_rotate_trainsform_begin = clock();
 			compute_scale_rotate_transform(GTBox, GTBox_normalization, scale_rotate_normalization_to_truth, transform_normalization_to_truth);
@@ -339,8 +345,8 @@ int main(int argc, char* argv[])
 
 			for(int i = 0; i < landmark_number; ++i)
 			{
-				float x = landmarks_cur(i, 0);
-				float y = landmarks_cur(i, 1);
+				int x = (int)landmarks_cur(i, 0);
+				int y = (int)landmarks_cur(i, 1);
 				cv::circle(image, cv::Point(x, y), 1, cv::Scalar(255, 255, 255), -1);
 			}
 			cv::rectangle(image, GTBox_Rect, cv::Scalar(255, 255, 255), 1, 1, 0);
