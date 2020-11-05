@@ -54,31 +54,32 @@ float tree::splite_node(std::vector<sample> &data, const float &u_x, const float
 	cv::Mat_<float> mean_right = cv::Mat_<float>::zeros(landmark_number, 2);
 	int left_number = 0;
 	int right_number = 0;
+
+	cv::Mat_<float> u_offset_temp(1, 2);
+	cv::Mat_<float> v_offset_temp(1, 2);
+	cv::Mat_<float> u_data(1, 2);
+	cv::Mat_<float> v_data(1, 2);
+	cv::Mat_<float> u_cur(1, 2);
+	cv::Mat_<float> v_cur(1, 2);
+	cv::Mat_<float> u_data_unnormalization(1, 2);
+	cv::Mat_<float> v_data_unnormalization(1, 2);
 	for(int i = 0; i < data.size(); ++i)
 	{
 		if(data[i].tree_index == index)
 		{
-			cv::Mat_<float> u_offset_temp(1, 2);
 			u_offset_temp(0, 0) = u_x;
 			u_offset_temp(0, 1) = u_y;
-
-			cv::Mat_<float> v_offset_temp(1, 2);
 			v_offset_temp(0, 0) = v_x;
 			v_offset_temp(0, 1) = v_y;
 
-			cv::Mat_<float> u_data(1, 2);
-			cv::Mat_<float> v_data(1, 2);
-			cv::Mat_<float> u_cur(1, 2);
-			cv::Mat_<float> v_cur(1, 2);
-			u_cur(0, 0) = data[i].landmarks_cur_normalization(u_index, 0); u_cur(0, 1) = data[i].landmarks_cur_normalization(u_index, 1);
-			v_cur(0, 0) = data[i].landmarks_cur_normalization(v_index, 0); v_cur(0, 1) = data[i].landmarks_cur_normalization(v_index, 1);
+			u_cur(0, 0) = data[i].landmarks_cur_normalization(u_index, 0);
+			u_cur(0, 1) = data[i].landmarks_cur_normalization(u_index, 1);
+			v_cur(0, 0) = data[i].landmarks_cur_normalization(v_index, 0);
+			v_cur(0, 1) = data[i].landmarks_cur_normalization(v_index, 1);
 
 			u_data = u_cur + u_offset_temp * data[i].scale_rotate_from_mean;
 			v_data = v_cur + v_offset_temp * data[i].scale_rotate_from_mean;
 			
-			cv::Mat_<float> u_data_unnormalization(1, 2);
-			cv::Mat_<float> v_data_unnormalization(1, 2);
-
 			normalization(u_data_unnormalization, u_data, data[i].scale_rotate_unnormalization, data[i].transform_unnormalization);
 			normalization(v_data_unnormalization, v_data, data[i].scale_rotate_unnormalization, data[i].transform_unnormalization);
 			int u_value, v_value;

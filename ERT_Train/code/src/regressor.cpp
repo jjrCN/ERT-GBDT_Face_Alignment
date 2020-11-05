@@ -128,12 +128,14 @@ void regressor::train(std::vector<sample> &data, std::vector<sample> &validation
 
 		std::vector<std::vector<int>> result;
 		std::vector<std::vector<int>> result_vali;
+		result.resize(multiple_trees_number);
+		result_vali.resize(multiple_trees_number);
+
 		for(int j = 0; j < multiple_trees_number; ++j)
 		{
-
-			std::vector<int> temp;
+			std::vector<int>& temp = result[j];
+			std::vector<int>& temp_vali = result_vali[j];
 			temp.resize(data.size());
-			std::vector<int> temp_vali;
 			temp_vali.resize(validationdata.size());
 
 			_trees[i * multiple_trees_number + j].train(data, validationdata, feature_pool, offset, landmark_index);
@@ -148,8 +150,6 @@ void regressor::train(std::vector<sample> &data, std::vector<sample> &validation
 				temp_vali[k] = validationdata[k].tree_index - _trees[i * multiple_trees_number + j].root_number();
 				validationdata[k].tree_index = 0;
 			}
-			result.push_back(temp);
-			result_vali.push_back(temp_vali);
 		}
 
 		for(int k = 0; k < data.size(); ++k)

@@ -16,11 +16,20 @@
 
 class ERT{
 public:
-	ERT(const int &cascade_number = 10, const int &tree_number = 500, const int &multiple_trees_number = 10, const int &tree_depth = 5, const int &feature_number_of_node = 20, 
-		const int &feature_pool_size = 400, const float &shrinkage_factor = 0.1, const float &padding = 0.1, const int &initialization = 1, const float &lamda = 0.1);
+	ERT(
+		const int &cascade_number = 10,
+		const int &tree_number = 500,
+		const int &multiple_trees_number = 10,
+		const int &tree_depth = 5,
+		const int &feature_number_of_node = 20, 
+		const int &feature_pool_size = 400,
+		const float &shrinkage_factor = 0.1,
+		const float &padding = 0.1,
+		const int &initialization = 1,
+		const float &lamda = 0.1
+		);
 
 	void train(std::vector<sample> &data, std::vector<sample> &validationdata);
-
 	void save(const std::string &path);
 
 private:
