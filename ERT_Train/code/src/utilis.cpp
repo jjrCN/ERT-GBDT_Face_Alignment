@@ -70,42 +70,24 @@ void Loadimages(std::vector<sample> &data, const std::string &path)
 		getline(fin, temp);
 		getline(fin, temp);
 
-		cv::Mat_<float> landmark(landmarks_number, 2);
-		float x_min, x_max, y_min, y_max;
-
+		Eigen::MatrixX2f landmark(landmarks_number, 2);
 		for(int j = 0; j < landmarks_number; ++j)
 		{
-			fin >> landmark(j, 0) >> landmark(j, 1);
-
-			if(j == 0)
-			{
-				x_max = landmark(j, 0);
-				x_min = landmark(j, 0);
-				y_max = landmark(j, 1);
-				y_min = landmark(j, 1);
-			}
-
-			if(x_max < landmark(j, 0))
-				x_max = landmark(j, 0);
-
-			if(x_min > landmark(j, 0))
-				x_min = landmark(j, 0);
-
-			if(y_max < landmark(j, 1))
-				y_max = landmark(j, 1);
-
-			if(y_min > landmark(j, 1))
-				y_min = landmark(j, 1);
-
+			float x, y;
+			fin >> x >> y;
+			landmark.row(j) = Eigen::Vector2f(x, y);
 			getline(fin, temp);
 		}
+
+		Eigen::RowVector2f bbMin = landmark.colwise().minCoeff();
+		Eigen::RowVector2f bbMax = landmark.colwise().maxCoeff();
 
 		std::vector<cv::Rect> faces_temp;
 		haar_cascade.detectMultiScale(image, faces_temp, 1.1, 2, 0, cv::Size(30, 30));
 
 		for(int k = 0; k < faces_temp.size(); ++k)
 		{
-			if(IsDetected(faces_temp[k], x_max, x_min, y_max, y_min))
+			if(IsDetected(faces_temp[k], bbMax(0), bbMin(0), bbMax(1), bbMin(1)))
 			{
 				sample temp;
 				temp.image_name = images_name[i];
@@ -124,19 +106,21 @@ void Loadimages(std::vector<sample> &data, const std::string &path)
 	std::cout << "Number of the landmarks : " << data[0].landmarks_truth.size() << std::endl << std::endl;
 }
 
-void compute_similarity_transform(const cv::Mat_<float> &target, const cv::Mat_<float> &origin, cv::Mat_<float> &scale_rotate, cv::Mat_<float> &transform)
+void compute_similarity_transform(
+	const Eigen::MatrixX2f& target,
+	const Eigen::MatrixX2f& origin,
+	Eigen::Matrix2f& scale_rotate,
+	Eigen::RowVector2f& transform)
 {
-	int rows = origin.rows;
-	int cols = origin.cols;
-	cv::Mat_<float> ones = cv::Mat_<float>::ones(rows, 1);
+	int rows = origin.rows();
+	int cols = origin.cols();
 
-	cv::Mat_<float> origin_new;
-	cv::hconcat(origin, ones, origin_new);
+	Eigen::MatrixX3f origin_new(rows, 3);
+	origin_new.block(0, 0, rows, 2) = origin;
+	origin_new.block(0, 2, rows, 1) = Eigen::VectorXf::Ones(rows);
 
-	cv::Mat_<float> pinv;
-	cv::invert(origin_new, pinv, cv::DECOMP_SVD);
-
-	cv::Mat_<float> weight = pinv * target;
+	auto pinv = (origin_new.transpose() * origin_new).inverse() * origin_new.transpose();
+	auto weight = pinv * target;
 
 	scale_rotate(0, 0) = weight(0, 0);
 	scale_rotate(0, 1) = weight(0, 1);
@@ -147,14 +131,14 @@ void compute_similarity_transform(const cv::Mat_<float> &target, const cv::Mat_<
 	transform(0, 1) = weight(2, 1);
 }
 
-void normalization(cv::Mat_<float> &target, const cv::Mat_<float> &origin, const cv::Mat_<float> &scale_rotate, const cv::Mat_<float> &transform)
+void normalization(
+	Eigen::MatrixX2f &target,
+	const Eigen::MatrixX2f &origin,
+	const Eigen::Matrix2f &scale_rotate,
+	const Eigen::RowVector2f &transform
+	)
 {
-	cv::Mat_<float> ones = cv::Mat_<float>::ones(origin.rows, 1);
-	cv::Mat_<float> temp1;
-	cv::hconcat(origin, ones, temp1);
-	cv::Mat_<float> temp2;
-	cv::vconcat(scale_rotate, transform, temp2);
-	target = temp1 * temp2;
+	target = (origin * scale_rotate).rowwise() + transform;
 }
 
 void check_edge(sample &data)
@@ -162,7 +146,7 @@ void check_edge(sample &data)
 	int rows = data.image.rows;
 	int cols = data.image.cols;
 
-	for(int i = 0; i < data.landmarks_truth.rows; ++i)
+	for(int i = 0; i < data.landmarks_truth.rows(); ++i)
 	{
 		if(data.landmarks_cur(i, 0) < 0)
 			data.landmarks_cur(i, 0) = 0.0f;
@@ -175,18 +159,19 @@ void check_edge(sample &data)
 	}
 }
 
-void GenerateValidationdata(std::vector<sample> &data, const cv::Mat_<float> &global_mean_landmarks)
+void GenerateValidationdata(std::vector<sample> &data, const Eigen::MatrixX2f &global_mean_landmarks)
 {
-	cv::Mat_<float> target(4, 2);
+	Eigen::MatrixX2f target(4, 2);
 
 	target(0, 0) = 0; target(0, 1) = 0;
 	target(1, 0) = 1; target(1, 1) = 0;
 	target(2, 0) = 0; target(2, 1) = 1;
 	target(3, 0) = 1; target(3, 1) = 1;
 
-	cv::Mat_<float> scale_rotate(2, 2);
-	cv::Mat_<float> transform(1, 2);
-	cv::Mat_<float> origin(4, 2);
+	Eigen::Matrix2f scale_rotate;
+	Eigen::RowVector2f transform;
+
+	Eigen::MatrixX2f origin(4, 2);
 
 	for(int i = 0; i < data.size(); ++i)
 	{	
@@ -201,17 +186,17 @@ void GenerateValidationdata(std::vector<sample> &data, const cv::Mat_<float> &gl
 
 		compute_similarity_transform(target, origin, scale_rotate, transform);
 
-		data[i].scale_rotate_normalization = scale_rotate.clone();
-		data[i].transform_normalization = transform.clone();
+		data[i].scale_rotate_normalization = scale_rotate;
+		data[i].transform_normalization = transform;
 
 		compute_similarity_transform(origin, target, scale_rotate, transform);
 		
-		data[i].scale_rotate_unnormalization = scale_rotate.clone();
-		data[i].transform_unnormalization = transform.clone();			
+		data[i].scale_rotate_unnormalization = scale_rotate;
+		data[i].transform_unnormalization = transform;			
 
 		normalization(data[i].landmarks_truth_normalizaiotn, data[i].landmarks_truth, data[i].scale_rotate_normalization, data[i].transform_normalization);
 
-		data[i].landmarks_cur_normalization = global_mean_landmarks.clone();
+		data[i].landmarks_cur_normalization = global_mean_landmarks;
 		normalization(data[i].landmarks_cur, data[i].landmarks_cur_normalization, 
 				data[i].scale_rotate_unnormalization, data[i].transform_unnormalization);
 		check_edge(data[i]);
@@ -220,16 +205,16 @@ void GenerateValidationdata(std::vector<sample> &data, const cv::Mat_<float> &gl
 
 void GenerateTraindata(std::vector<sample> &data, const int &initialization)
 {
-	cv::Mat_<float> target(4, 2);
+	Eigen::MatrixX2f target(4, 2);
 
 	target(0, 0) = 0; target(0, 1) = 0;
 	target(1, 0) = 1; target(1, 1) = 0;
 	target(2, 0) = 0; target(2, 1) = 1;
 	target(3, 0) = 1; target(3, 1) = 1;
 
-	cv::Mat_<float> scale_rotate(2, 2);
-	cv::Mat_<float> transform(1, 2);
-	cv::Mat_<float> origin(4, 2);
+	Eigen::Matrix2f scale_rotate;
+	Eigen::RowVector2f transform;
+	Eigen::MatrixX2f origin(4, 2);
 
 	int data_size_origin = data.size();
 	data.resize(initialization * data_size_origin);
@@ -247,13 +232,13 @@ void GenerateTraindata(std::vector<sample> &data, const int &initialization)
 
 		compute_similarity_transform(target, origin, scale_rotate, transform);
 
-		data[i].scale_rotate_normalization = scale_rotate.clone();
-		data[i].transform_normalization = transform.clone();
+		data[i].scale_rotate_normalization = scale_rotate;
+		data[i].transform_normalization = transform;
 
 		compute_similarity_transform(origin, target, scale_rotate, transform);
 		
-		data[i].scale_rotate_unnormalization = scale_rotate.clone();
-		data[i].transform_unnormalization = transform.clone();			
+		data[i].scale_rotate_unnormalization = scale_rotate;
+		data[i].transform_unnormalization = transform;			
 
 		normalization(data[i].landmarks_truth_normalizaiotn, data[i].landmarks_truth, data[i].scale_rotate_normalization, data[i].transform_normalization);
 	}
@@ -270,7 +255,7 @@ void GenerateTraindata(std::vector<sample> &data, const int &initialization)
 				index = rand() % (data_size_origin);
 			}while(index == i);
 
-			data[i + j * data_size_origin].landmarks_cur_normalization = data[index].landmarks_truth_normalizaiotn.clone();
+			data[i + j * data_size_origin].landmarks_cur_normalization = data[index].landmarks_truth_normalizaiotn;
 			normalization(data[i + j * data_size_origin].landmarks_cur, data[i + j * data_size_origin].landmarks_cur_normalization, 
 				data[i + j * data_size_origin].scale_rotate_unnormalization, data[i + j * data_size_origin].transform_unnormalization);
 			check_edge(data[i + j * data_size_origin]);
@@ -289,7 +274,7 @@ void output(const sample &data, const std::string &path)
 	cv::Mat_<uchar> image = data.image.clone();
 	cv::rectangle(image, data.GTBox, cv::Scalar(255, 255, 255), 3, 1, 0);
 
-	for(int i = 0; i < data.landmarks_truth.rows; ++i)
+	for(int i = 0; i < data.landmarks_truth.rows(); ++i)
 	{
 		auto x = (int)data.landmarks_truth(i, 0);
 		auto y = (int)data.landmarks_truth(i, 1);
@@ -332,13 +317,13 @@ float compute_Error(const std::vector<sample> &data)
 
 		float dis = std::sqrt(std::pow(l_x - r_x, 2) + std::pow(l_y - r_y, 2));
 		float error = 0;
-		for(int j = 0; j < data[i].landmarks_cur.rows; ++j)
+		for(int j = 0; j < data[i].landmarks_cur.rows(); ++j)
 		{
 			error += std::sqrt(std::pow(data[i].landmarks_truth(j, 0) - data[i].landmarks_cur(j, 0), 2) 
 				+ std::pow(data[i].landmarks_truth(j, 1) - data[i].landmarks_cur(j, 1), 2));
 		}
 
-		total_error += (error / data[i].landmarks_cur.rows) / dis;
+		total_error += (error / data[i].landmarks_cur.rows()) / dis;
 	}
 
 	return total_error / data.size();

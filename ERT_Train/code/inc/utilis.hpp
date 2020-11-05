@@ -16,23 +16,25 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+#include <Eigen/Dense>
+
 class sample{
 public:
 	std::string image_name;
 	cv::Mat_<uchar> image;
 	cv::Rect GTBox;
 
-	cv::Mat_<float> landmarks_truth;
-	cv::Mat_<float> landmarks_truth_normalizaiotn;
-	cv::Mat_<float> landmarks_cur;
-	cv::Mat_<float> landmarks_cur_normalization;
-	cv::Mat_<float> scale_rotate_normalization;
-	cv::Mat_<float> transform_normalization;
-	cv::Mat_<float> scale_rotate_unnormalization;
-	cv::Mat_<float> transform_unnormalization;
+	Eigen::MatrixX2f landmarks_truth;
+	Eigen::MatrixX2f landmarks_truth_normalizaiotn;
+	Eigen::MatrixX2f landmarks_cur;
+	Eigen::MatrixX2f landmarks_cur_normalization;
+	Eigen::Matrix2f scale_rotate_normalization;
+	Eigen::RowVector2f transform_normalization;
+	Eigen::Matrix2f scale_rotate_unnormalization;
+	Eigen::RowVector2f transform_unnormalization;
 
-	cv::Mat_<float> scale_rotate_from_mean;
-	cv::Mat_<float> transform_from_mean;
+	Eigen::Matrix2f scale_rotate_from_mean;
+	Eigen::RowVector2f transform_from_mean;
 
 	int tree_index;
 };
@@ -51,7 +53,7 @@ public:
 class TreeModel{
 public:
 	std::vector<UnLeafNode> splite_model;
-	std::vector<cv::Mat_<float>> residual_model;
+	std::vector<Eigen::MatrixX2f> residual_model;
 };
 
 void cut_name(std::string &name, const std::string &name_with_info);
@@ -66,11 +68,19 @@ void output(const sample &data, const std::string &path);
 
 void GenerateTraindata(std::vector<sample> &data, const int &initialization);
 
-void GenerateValidationdata(std::vector<sample> &data, const cv::Mat_<float> &global_mean_landmarks);
+void GenerateValidationdata(std::vector<sample> &data, const Eigen::MatrixX2f &global_mean_landmarks);
 
-void compute_similarity_transform(const cv::Mat_<float> &target, const cv::Mat_<float> &origin, cv::Mat_<float> &scale_rotate, cv::Mat_<float> &transform);
+void compute_similarity_transform(
+	const Eigen::MatrixX2f& target,
+	const Eigen::MatrixX2f& origin,
+	Eigen::Matrix2f& scale_rotate,
+	Eigen::RowVector2f& transform);
 
-void normalization(cv::Mat_<float> &target, const cv::Mat_<float> &origin, const cv::Mat_<float> &scale_rotate, const cv::Mat_<float> &transform);
+void normalization(
+	Eigen::MatrixX2f &target,
+	const Eigen::MatrixX2f &origin,
+	const Eigen::Matrix2f &scale_rotate,
+	const Eigen::RowVector2f &transform);
 
 void check_edge(sample &data);
 

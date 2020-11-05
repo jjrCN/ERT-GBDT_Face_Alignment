@@ -36,7 +36,7 @@ private:
 	void compute_mean_landmarks(const std::vector<sample> &data);
 
 private:
-	cv::Mat_<float> global_mean_landmarks;
+	Eigen::MatrixX2f global_mean_landmarks;
 
 	int feature_number_of_node;
 	int feature_pool_size;

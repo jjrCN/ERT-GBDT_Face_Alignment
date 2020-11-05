@@ -11,8 +11,8 @@ public:
 	void train(
 		std::vector<sample> &data,
 		std::vector<sample> &validationdata,
-		const cv::Mat_<float> &feature_pool,
-		const cv::Mat_<float> &offset,
+		const Eigen::MatrixX2f &feature_pool,
+		const Eigen::MatrixX2f &offset,
 		const std::vector<int> &landmark_index
 		);
 
@@ -23,10 +23,10 @@ public:
 
 private:
 	void generate_candidate_feature(
-		const cv::Mat_<float> &feature_pool,
-		const cv::Mat_<float> &offset,
+		const Eigen::MatrixX2f &feature_pool,
+		const Eigen::MatrixX2f &offset,
 		const std::vector<int> &landmark_index,
-		cv::Mat_<float> &candidate_feature_offset,
+		Eigen::MatrixX2f &candidate_feature_offset,
 		std::vector<int> &candidate_landmark_index,
 		std::vector<float> &threshold
 		);

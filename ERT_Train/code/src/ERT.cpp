@@ -35,7 +35,8 @@ ERT::ERT(const int &cascade_number, const int &tree_number, const int &multiple_
 
 void ERT::compute_mean_landmarks(const std::vector<sample> &data)
 {
-	global_mean_landmarks = cv::Mat_<float>::zeros(data[0].landmarks_truth.rows, 2);
+	global_mean_landmarks.resize(data[0].landmarks_truth.rows(), 2);
+	global_mean_landmarks.setZero();
 	for(int i = 0; i < data.size() / initialization; ++i)
 	{
 		global_mean_landmarks += data[i].landmarks_truth_normalizaiotn;
@@ -104,7 +105,7 @@ void ERT::save(const std::string &path)
 {
 	int root_number = (int)std::pow(2, tree_depth - 1) - 1;
 	int leaf_number = (int)std::pow(2, tree_depth - 1);
-	int landmark_number = global_mean_landmarks.rows;
+	int landmark_number = global_mean_landmarks.rows();
 
 	json tree;
 	// pt::ptree tree;

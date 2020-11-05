@@ -6,6 +6,7 @@ include(ExternalProject)
 set(DEPENDENCY_INSTALL_DIR ${PROJECT_BINARY_DIR}/install)
 set(DEPENDENCY_INCLUDE_DIR ${DEPENDENCY_INSTALL_DIR}/include)
 set(DEPENDENCY_LIBS ${LINK_DIR_OPTION}${DEPENDENCY_INSTALL_DIR}/lib)
+
 ExternalProject_Add(
     dep_filesystem
     GIT_REPOSITORY "https://github.com/gulrak/filesystem.git"
@@ -34,6 +35,23 @@ ExternalProject_Add(
     TEST_COMMAND ""
     )
 set(DEPENDENCY_LIST ${DEPENDENCY_LIST} dep-json)
+
+ExternalProject_Add(
+    dep-eigen
+    URL https://gitlab.com/libeigen/eigen/-/archive/3.3.8/eigen-3.3.8.tar.bz2
+    DOWNLOAD_DIR ${PROJECT_BINARY_DIR}/downloads
+    UPDATE_COMMAND ""
+    PATCH_COMMAND ""
+    CONFIGURE_COMMAND ""
+    SOURCE_DIR "${PROJECT_BINARY_DIR}/source/eigen"
+    BUILD_COMMAND ""
+    INSTALL_COMMAND
+        ${CMAKE_COMMAND} -E remove_directory ${DEPENDENCY_INSTALL_DIR}/include/Eigen &&
+        ${CMAKE_COMMAND} -E copy_directory ${PROJECT_BINARY_DIR}/source/eigen/Eigen
+            ${DEPENDENCY_INSTALL_DIR}/include/Eigen
+TEST_COMMAND ""
+)
+set(DEPENDENCY_LIST ${DEPENDENCY_LIST} dep-eigen)
 
 set(OpenCV_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/../opencv/install-debug)
 # set(OpenCV_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/../opencv/install)
