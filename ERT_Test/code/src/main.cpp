@@ -102,7 +102,7 @@ int main(int argc, char* argv[])
 {
 	std::srand((uint32_t)std::chrono::high_resolution_clock::now().time_since_epoch().count());
 
-	std::string model_path = "./../model/ERT.json";
+	std::string model_path = "./result/model/ERT.json";
 	std::ifstream fin(model_path);
 	json tree_json;
 	fin >> tree_json;

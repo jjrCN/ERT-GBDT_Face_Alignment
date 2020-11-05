@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
 
 	FaceAlignmentOperator.train(traindata, validationdata);
 
-	std::string model_file_path = "./result/model/ERT_jjr.json";
+	std::string model_file_path = "./result/model/ERT.json";
 	fs::remove_all("./result/model");
 	fs::create_directories("./result/model");
 	FaceAlignmentOperator.save(model_file_path);

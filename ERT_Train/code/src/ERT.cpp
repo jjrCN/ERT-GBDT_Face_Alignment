@@ -63,13 +63,13 @@ void ERT::train(std::vector<sample> &data, std::vector<sample> &validationdata)
 
 		if(i == 0)
 		{
-			std::string path = "./../train_origin_landmark";
+			std::string path = "./result/train_origin_landmark";
 			fs::remove_all(path);
 			fs::create_directories(path);
 			for(int j = 0; j < 10; ++j)
 				output(data[j], path);
 
-			path = "./../validation_origin_landmark";
+			path = "./result/validation_origin_landmark";
 			fs::remove_all(path);
 			fs::create_directories(path);
 			for(int j = 0; j < 10; ++j)
@@ -80,8 +80,8 @@ void ERT::train(std::vector<sample> &data, std::vector<sample> &validationdata)
 
 		std::stringstream stream;
 		stream << i + 1;
-		std::string outputpath_train = "./../train_cascade_" + stream.str();
-		std::string outputpath_vali = "./../validation_cascade_" + stream.str();
+		std::string outputpath_train = "./result/train_cascade_" + stream.str();
+		std::string outputpath_vali = "./result/validation_cascade_" + stream.str();
 
 		fs::remove_all(outputpath_train);
 		fs::remove_all(outputpath_vali);

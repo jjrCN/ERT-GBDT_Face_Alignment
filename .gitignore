@@ -1,4 +1,3 @@
 dataset/
-train_*/
-validation_*/
 build/
+result/

@@ -111,7 +111,7 @@ void regressor::show_feature_node(const sample &data)
 		cv::circle(image, cv::Point(x, y), 3, cv::Scalar(100, 100, 100), -1);
 	}
 
-	std::string path = "./../feature/" + data.image_name + ".jpg";
+	std::string path = "./result/feature/" + data.image_name + ".jpg";
 	cv::imwrite(path.c_str(), image);
 }
 
