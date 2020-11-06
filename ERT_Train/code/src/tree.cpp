@@ -72,8 +72,8 @@ float tree::splite_node(
 	{
 		if(data[i].tree_index == index)
 		{
-			auto& u_cur = data[i].landmarks_cur_normalization.row(u_index);
-			auto& v_cur = data[i].landmarks_cur_normalization.row(v_index);
+			auto u_cur = data[i].landmarks_cur_normalization.row(u_index);
+			auto v_cur = data[i].landmarks_cur_normalization.row(v_index);
 
 			auto u_data = u_cur + u * data[i].scale_rotate_from_mean;
 			auto v_data = v_cur + v * data[i].scale_rotate_from_mean;
