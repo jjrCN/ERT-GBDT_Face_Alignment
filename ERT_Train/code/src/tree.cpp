@@ -50,12 +50,17 @@ void tree::generate_candidate_feature(
 	 }
 }
 
-float tree::splite_node(std::vector<sample> &data, const float &u_x, const float &u_y, const float &v_x, const float &v_y, const int &u_index, 
-						const int &v_index, const float &threshold, const int &index, bool whether_change_index)
+float tree::splite_node(
+	std::vector<sample> &data,
+	const Eigen::RowVector2f &u,
+	const Eigen::RowVector2f &v, 
+	int u_index, int v_index,
+	float threshold, int index,
+	bool whether_change_index)
 {
 	float score_left = 0;
 	float score_right = 0;
-	int landmark_number = data[0].landmarks_cur_normalization.rows();
+	int landmark_number = (int)data[0].landmarks_cur_normalization.rows();
 	Eigen::MatrixX2f mean_left(landmark_number, 2);
 	Eigen::MatrixX2f mean_right(landmark_number, 2);
 	mean_left.setZero();
@@ -67,36 +72,26 @@ float tree::splite_node(std::vector<sample> &data, const float &u_x, const float
 	{
 		if(data[i].tree_index == index)
 		{
-			Eigen::RowVector2f u_offset_temp(u_x, u_y);
-			Eigen::RowVector2f v_offset_temp(v_x, v_y);
-			Eigen::RowVector2f u_cur(data[i].landmarks_cur_normalization(u_index, 0), data[i].landmarks_cur_normalization(u_index, 1));
-			Eigen::RowVector2f v_cur(data[i].landmarks_cur_normalization(v_index, 0), data[i].landmarks_cur_normalization(v_index, 1));
+			auto& u_cur = data[i].landmarks_cur_normalization.row(u_index);
+			auto& v_cur = data[i].landmarks_cur_normalization.row(v_index);
 
-			auto u_data = u_cur + u_offset_temp * data[i].scale_rotate_from_mean;
-			auto v_data = v_cur + v_offset_temp * data[i].scale_rotate_from_mean;
+			auto u_data = u_cur + u * data[i].scale_rotate_from_mean;
+			auto v_data = v_cur + v * data[i].scale_rotate_from_mean;
 
-			Eigen::RowVector2f u_data_unnormalization = u_data * data[i].scale_rotate_unnormalization + data[i].transform_unnormalization;
-			Eigen::RowVector2f v_data_unnormalization = v_data * data[i].scale_rotate_unnormalization + data[i].transform_unnormalization;
-			int u_value, v_value;
+			auto u_data_unnormalization = u_data * data[i].scale_rotate_unnormalization + data[i].transform_unnormalization;
+			auto v_data_unnormalization = v_data * data[i].scale_rotate_unnormalization + data[i].transform_unnormalization;
 
-			//std::cout << i << std::endl;
-			
-			if(u_data_unnormalization(0) < 0 || u_data_unnormalization(0) >= data[i].image.cols || 
-				u_data_unnormalization(1) < 0 || u_data_unnormalization(1) >= data[i].image.rows)
-				u_value = 0;
-			else
+			int u_value = 0;
+			int v_value = 0;
+			if (u_data_unnormalization(0) >= 0 && u_data_unnormalization(0) < data[i].image.cols &&
+				u_data_unnormalization(1) >= 0 && u_data_unnormalization(1) < data[i].image.rows)
 				u_value = data[i].image.at<uchar>((int)u_data_unnormalization(1), (int)u_data_unnormalization(0));
 
-			if(v_data_unnormalization(0) < 0 || v_data_unnormalization(0) >= data[i].image.cols || 
-				v_data_unnormalization(1) < 0 || v_data_unnormalization(1) >= data[i].image.rows)
-				v_value = 0;
-			else
+			if (v_data_unnormalization(0) >= 0 && v_data_unnormalization(0) < data[i].image.cols &&
+				v_data_unnormalization(1) >= 0 && v_data_unnormalization(1) < data[i].image.rows)
 				v_value = data[i].image.at<uchar>((int)v_data_unnormalization(1), (int)v_data_unnormalization(0));
 
-			if(u_value - v_value > threshold)
-				data[i].tree_index = 2 * index + 1;
-			else
-				data[i].tree_index = 2 * index + 2;
+			data[i].tree_index = 2 * index + ((u_value - v_value > threshold) ? 1 : 2);
 
 			if(!whether_change_index)
 			{
@@ -116,8 +111,8 @@ float tree::splite_node(std::vector<sample> &data, const float &u_x, const float
 	}
 	if(!whether_change_index)
 	{
-		mean_left /= left_number;
-		mean_right /= right_number;
+		mean_left /= (float)left_number;
+		mean_right /= (float)right_number;
 		score_left = left_number * mean_left.squaredNorm();
 		score_right = right_number * mean_right.squaredNorm();
 
@@ -139,8 +134,12 @@ void tree::train(std::vector<sample> &data, std::vector<sample> &validationdata,
 		
 		for(int j = 0; j < feature_number_of_node / 2; ++j)
 		{
-			float score =  tree::splite_node(data, candidate_feature_offset(2 * j, 0), candidate_feature_offset(2 * j, 1), candidate_feature_offset(2 * j + 1, 0), 
-				candidate_feature_offset(2 * j + 1, 1), candidate_landmark_index[2 * j], candidate_landmark_index[2 * j + 1], threshold[j], i, false);
+			float score =  tree::splite_node(data,
+				candidate_feature_offset.row(2 * j),
+				candidate_feature_offset.row(2 * j + 1),
+				candidate_landmark_index[2 * j],
+				candidate_landmark_index[2 * j + 1],
+				threshold[j], i, false);
 			
 			if(j == 0)
 			{
@@ -159,20 +158,26 @@ void tree::train(std::vector<sample> &data, std::vector<sample> &validationdata,
 		
 		_model.splite_model[i].landmark_index1 = candidate_landmark_index[index_max_score];
 		_model.splite_model[i].landmark_index2 = candidate_landmark_index[index_max_score + 1];
-		_model.splite_model[i].index1_offset_x = candidate_feature_offset(index_max_score, 0);
-		_model.splite_model[i].index1_offset_y = candidate_feature_offset(index_max_score, 1);
-		_model.splite_model[i].index2_offset_x = candidate_feature_offset(index_max_score + 1, 0);
-		_model.splite_model[i].index2_offset_y = candidate_feature_offset(index_max_score + 1, 1);
+		_model.splite_model[i].index1_offset = candidate_feature_offset.row(index_max_score);
+		_model.splite_model[i].index2_offset = candidate_feature_offset.row(index_max_score + 1);
 		_model.splite_model[i].threshold = threshold[index_max_score / 2];
 		
-		tree::splite_node(data, _model.splite_model[i].index1_offset_x, _model.splite_model[i].index1_offset_y, _model.splite_model[i].index2_offset_x,
-			 _model.splite_model[i].index2_offset_y, _model.splite_model[i].landmark_index1, _model.splite_model[i].landmark_index2, _model.splite_model[i].threshold, i, true);
+		tree::splite_node(data,
+			_model.splite_model[i].index1_offset,
+			_model.splite_model[i].index2_offset,
+			_model.splite_model[i].landmark_index1,
+			_model.splite_model[i].landmark_index2,
+			_model.splite_model[i].threshold, i, true);
 
-		tree::splite_node(validationdata, _model.splite_model[i].index1_offset_x, _model.splite_model[i].index1_offset_y, _model.splite_model[i].index2_offset_x,
-			 _model.splite_model[i].index2_offset_y, _model.splite_model[i].landmark_index1, _model.splite_model[i].landmark_index2, _model.splite_model[i].threshold, i, true);
+		tree::splite_node(validationdata,
+			_model.splite_model[i].index1_offset,
+			_model.splite_model[i].index2_offset,
+			_model.splite_model[i].landmark_index1,
+			_model.splite_model[i].landmark_index2,
+			_model.splite_model[i].threshold, i, true);
 
 	}
-	int landmark_number = data[0].landmarks_truth_normalizaiotn.rows();
+	int landmark_number = (int)data[0].landmarks_truth_normalizaiotn.rows();
 	for(int i = 0; i < _leaf_number; ++i)
 	{
 		_model.residual_model[i].resize(landmark_number, 2);
@@ -193,6 +198,6 @@ void tree::train(std::vector<sample> &data, std::vector<sample> &validationdata,
 	for(int i = 0; i < _leaf_number; ++i)
 	{
 		if(data_number[i])
-			_model.residual_model[i] /= data_number[i];
+			_model.residual_model[i] /= (float)data_number[i];
 	}
 }

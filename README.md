@@ -54,14 +54,20 @@ Please Star it. Thank you.
 - Use the [nlohmann's modern json library](https://github.com/nlohmann/json) instead of the boost library for saving and loading a trained model, in order to remove a big 'boost' dependency
 - Use the cmake's `ExternalProject_Add()` command to automatically build the dependencies above
 
+##### how to build
+
+> `$ cmake -H. -Bbuild`
+> `$ cmake --build build`
+
 ##### to-do list
 
 - [ ] generate image and landmark file list without using subdirectory
 - [ ] utilize command line arguments to receive learning parameter
 - [ ] use [another face detection model](https://github.com/ShiqiYu/libfacedetection.git)
-- [ ] optimize the learning code for fast learning 
+- [x] optimize the learning code for fast learning 
+  - [x] use Eigen3 instead of cv::Mat for acceleration
 - [x] test a learnt model
-- [ ] load a learnt model saved by a json format
+- [x] load a learnt model saved by a json format
 - [ ] create a simple binary model, make it fast for loading and saving
 - [ ] optimize test code
 - [ ] remove opencv dependency (is it possible?)

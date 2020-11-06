@@ -100,7 +100,7 @@ void regressor::train(std::vector<sample> &data, std::vector<sample> &validation
 	regressor::compute_similarity_transform_with_mean(validationdata, global_mean_landmarks);
 	regressor::generate_feature_pool(global_mean_landmarks);
 
-	int landmark_number = global_mean_landmarks.rows();
+	int landmark_number = (int)global_mean_landmarks.rows();
 	int time = tree_number / multiple_trees_number;
 	for(int i = 0; i < time; ++i)
 	{	
@@ -139,7 +139,7 @@ void regressor::train(std::vector<sample> &data, std::vector<sample> &validation
 			{
 				residual += _trees[i * multiple_trees_number + j].model()->residual_model[result[j][k]];
 			}
-			residual /= multiple_trees_number;
+			residual /= (float)multiple_trees_number;
 			data[k].landmarks_cur_normalization += shrinkage_factor * residual;
 			normalization(data[k].landmarks_cur, data[k].landmarks_cur_normalization, data[k].scale_rotate_unnormalization, data[k].transform_unnormalization);	
 		}
@@ -153,7 +153,7 @@ void regressor::train(std::vector<sample> &data, std::vector<sample> &validation
 			{
 				residual += _trees[i * multiple_trees_number + j].model()->residual_model[result_vali[j][k]];
 			}
-			residual /= multiple_trees_number;
+			residual /= (float)multiple_trees_number;
 			validationdata[k].landmarks_cur_normalization += shrinkage_factor * residual;
 			normalization(validationdata[k].landmarks_cur, validationdata[k].landmarks_cur_normalization, 
 							validationdata[k].scale_rotate_unnormalization, validationdata[k].transform_unnormalization);

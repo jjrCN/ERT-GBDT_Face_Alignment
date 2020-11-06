@@ -8,6 +8,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+#include <Eigen/Dense>
+
 #include <string>
 #include <set>
 #include <exception>
@@ -21,30 +23,32 @@ class UnLeafNode{
 public:
 	int landmark_index1;
 	int landmark_index2;
-	cv::Mat_<float> index1_offset;
-	cv::Mat_<float> index2_offset;
+	Eigen::RowVector2f index1_offset;
+	Eigen::RowVector2f index2_offset;
 	float threshold;
 };
 
 class TreeModel{
 public:
 	std::vector<UnLeafNode> splite_model;
-	std::vector<cv::Mat_<float>> residual_model;
+	std::vector<Eigen::MatrixX2f> residual_model;
 };
 
-void compute_scale_rotate_transform(const cv::Mat_<float> &target, const cv::Mat_<float> &origin, cv::Mat_<float> &scale_rotate, cv::Mat_<float> &transform)
+void compute_scale_rotate_transform(
+	const Eigen::MatrixX2f &target,
+	const Eigen::MatrixX2f &origin,
+	Eigen::Matrix2f &scale_rotate,
+	Eigen::RowVector2f &transform)
 {
-	int rows = origin.rows;
-	int cols = origin.cols;
-	cv::Mat_<float> ones = cv::Mat_<float>::ones(rows, 1);
+	int rows = (int)origin.rows();
+	int cols = (int)origin.cols();
 
-	cv::Mat_<float> origin_new;
-	cv::hconcat(origin, ones, origin_new);
+	Eigen::MatrixX3f origin_new(rows, 3);
+	origin_new.block(0, 0, rows, 2) = origin;
+	origin_new.block(0, 2, rows, 1) = Eigen::VectorXf::Ones(rows);
 
-	cv::Mat_<float> pinv;
-	cv::invert(origin_new, pinv, cv::DECOMP_SVD);
-
-	cv::Mat_<float> weight = pinv * target;
+	auto pinv = (origin_new.transpose() * origin_new).inverse() * origin_new.transpose();
+	auto weight = pinv * target;
 
 	scale_rotate(0, 0) = weight(0, 0);
 	scale_rotate(0, 1) = weight(0, 1);
@@ -55,19 +59,20 @@ void compute_scale_rotate_transform(const cv::Mat_<float> &target, const cv::Mat
 	transform(0, 1) = weight(2, 1);
 }
 
-void compute_scale_rotate(const cv::Mat_<float> &target, const cv::Mat_<float> &origin, cv::Mat_<float> &scale_rotate)
+void compute_scale_rotate(
+	const Eigen::MatrixX2f &target,
+	const Eigen::MatrixX2f &origin,
+	Eigen::Matrix2f &scale_rotate)
 {
-	int rows = origin.rows;
-	int cols = origin.cols;
-	cv::Mat_<float> ones = cv::Mat_<float>::ones(rows, 1);
+	int rows = (int)origin.rows();
+	int cols = (int)origin.cols();
 
-	cv::Mat_<float> origin_new;
-	cv::hconcat(origin, ones, origin_new);
+	Eigen::MatrixX3f origin_new(rows, 3);
+	origin_new.block(0, 0, rows, 2) = origin;
+	origin_new.block(0, 2, rows, 1) = Eigen::VectorXf::Ones(rows);
 
-	cv::Mat_<float> pinv;
-	cv::invert(origin_new, pinv, cv::DECOMP_SVD);
-
-	cv::Mat_<float> weight = pinv * target;
+	auto pinv = (origin_new.transpose() * origin_new).inverse() * origin_new.transpose();
+	auto weight = pinv * target;
 
 	scale_rotate(0, 0) = weight(0, 0);
 	scale_rotate(0, 1) = weight(0, 1);
@@ -85,18 +90,13 @@ void normalization(cv::Mat_<float> &target, const cv::Mat_<float> &origin, const
 	target = temp1 * temp2;
 }
 
-void normalization2(cv::Mat_<float> &target, const cv::Mat_<float> &origin, const cv::Mat_<float> &scale_rotate, const cv::Mat_<float> &transform)
+void normalization2(
+	Eigen::MatrixX2f &target,
+	const Eigen::MatrixX2f &origin,
+	const Eigen::Matrix2f &scale_rotate,
+	const Eigen::RowVector2f &transform)
 {
-	int rows = origin.rows;
-	cv::Mat_<float> temp(1, 2);
-	for(int i = 0; i < rows; ++i)
-	{
-		temp(0, 0) = origin(i, 0);
-		temp(0, 1) = origin(i, 1);
-		temp = temp * scale_rotate + transform;
-		target(i, 0) = temp(0, 0);
-		target(i, 1) = temp(0, 1);
-	}
+	target = (origin * scale_rotate).rowwise() + transform;
 }
 
 int main(int argc, char* argv[])
@@ -121,7 +121,7 @@ int main(int argc, char* argv[])
 	int root_number = (int)(std::pow(2, tree_depth - 1) - 1);
 	int leaf_number = (int)(std::pow(2, tree_depth - 1));
 
-	cv::Mat_<float> global_mean_landmarks(landmark_number, 2);
+	Eigen::MatrixX2f global_mean_landmarks(landmark_number, 2);
 	for(int i = 0; i < landmark_number; ++i)
 	{
 		std::stringstream stream_global_mean_landmarks;
@@ -167,12 +167,12 @@ int main(int argc, char* argv[])
  
 				tree.splite_model[k].landmark_index1 = tree_json[landmark_index1_path].get<int>();
 				tree.splite_model[k].landmark_index2 = tree_json[landmark_index2_path].get<int>();
-				tree.splite_model[k].index1_offset = cv::Mat_<float>::zeros(1, 2);
-				tree.splite_model[k].index2_offset = cv::Mat_<float>::zeros(1, 2);
-				tree.splite_model[k].index1_offset(0, 0) = tree_json[index1_offset_x].get<float>();
-				tree.splite_model[k].index1_offset(0, 1) = tree_json[index1_offset_y].get<float>();
-				tree.splite_model[k].index2_offset(0, 0) = tree_json[index2_offset_x].get<float>();
-				tree.splite_model[k].index2_offset(0, 1) = tree_json[index2_offset_y].get<float>();
+				tree.splite_model[k].index1_offset.setZero();
+				tree.splite_model[k].index2_offset.setZero();
+				tree.splite_model[k].index1_offset(0) = tree_json[index1_offset_x].get<float>();
+				tree.splite_model[k].index1_offset(1) = tree_json[index1_offset_y].get<float>();
+				tree.splite_model[k].index2_offset(0) = tree_json[index2_offset_x].get<float>();
+				tree.splite_model[k].index2_offset(1) = tree_json[index2_offset_y].get<float>();
 				tree.splite_model[k].threshold = tree_json[threshold].get<float>();
 			}
 
@@ -182,7 +182,8 @@ int main(int argc, char* argv[])
 				stream_root_node << k;
 				std::string root_node = tree_path + "leaf_node_" + stream_root_node.str() + ".";
 
-				cv::Mat_<float> leaf_node_data = cv::Mat_<float>::zeros(landmark_number, 2);
+				Eigen::MatrixX2f leaf_node_data(landmark_number, 2);
+				leaf_node_data.setZero();
 
 				for(int r = 0; r < landmark_number; ++r)
 				{
@@ -194,7 +195,7 @@ int main(int argc, char* argv[])
 					leaf_node_data(r, 0) = tree_json[residual_x].get<float>();
 					leaf_node_data(r, 1) = tree_json[residual_y].get<float>();
 				}
-				tree.residual_model[k] = leaf_node_data.clone();
+				tree.residual_model[k] = leaf_node_data;
 			}
 			regressor[j] = tree;
 		}
@@ -204,27 +205,27 @@ int main(int argc, char* argv[])
 
   	cv::Mat_<uchar> image;
   	cv::Rect GTBox_Rect;
-  	cv::Mat_<float> GTBox(4, 2);
-  	cv::Mat_<float> GTBox_normalization(4, 2);
+  	Eigen::MatrixX2f GTBox(4, 2);
+  	Eigen::MatrixX2f GTBox_normalization(4, 2);
   	GTBox_normalization(0, 0) = 0; GTBox_normalization(0, 1) = 0;
 	GTBox_normalization(1, 0) = 1; GTBox_normalization(1, 1) = 0;
 	GTBox_normalization(2, 0) = 0; GTBox_normalization(2, 1) = 1;
 	GTBox_normalization(3, 0) = 1; GTBox_normalization(3, 1) = 1; 
 
-	cv::Mat_<float> scale_rotate_normalization_to_truth(2, 2);
-	cv::Mat_<float> transform_normalization_to_truth(1, 2);
+	Eigen::Matrix2f scale_rotate_normalization_to_truth;
+	Eigen::RowVector2f transform_normalization_to_truth;
 
-	cv::Mat_<float> scale_rotate_from_mean_to_cur(2, 2);
-	cv::Mat_<float> transform_from_mean_to_cur(1, 2);
+	Eigen::Matrix2f scale_rotate_from_mean_to_cur;
+	Eigen::RowVector2f transform_from_mean_to_cur;
 
-	cv::Mat_<float> landmarks_cur_normalization = global_mean_landmarks.clone();
-	cv::Mat_<float> landmarks_cur(landmark_number, 2);
-	cv::Mat_<float> u_cur(1, 2);
-	cv::Mat_<float> v_cur(1, 2);
-	cv::Mat_<float> u_data(1, 2);
-	cv::Mat_<float> v_data(1, 2);
-	cv::Mat_<float> u_data_unnormalization(1, 2);
-	cv::Mat_<float> v_data_unnormalization(1, 2);
+	Eigen::MatrixX2f landmarks_cur_normalization = global_mean_landmarks;
+	Eigen::MatrixX2f landmarks_cur(landmark_number, 2);
+	Eigen::RowVector2f u_cur;
+	Eigen::RowVector2f v_cur;
+	Eigen::RowVector2f u_data;
+	Eigen::RowVector2f v_data;
+	Eigen::RowVector2f u_data_unnormalization;
+	Eigen::RowVector2f v_data_unnormalization;
 	int u_index, v_index;
 	int u_value, v_value;
 	int index = 0;
@@ -280,7 +281,7 @@ int main(int argc, char* argv[])
 			GTBox(2, 1) = (float)(GTBox_Rect.y + GTBox_Rect.height);
 			GTBox(3, 0) = (float)(GTBox_Rect.x + GTBox_Rect.width);
 			GTBox(3, 1) = (float)(GTBox_Rect.y + GTBox_Rect.height);
-			cv::Mat_<float> landmarks_cur_normalization = global_mean_landmarks.clone();
+			Eigen::MatrixX2f landmarks_cur_normalization = global_mean_landmarks;
 			time_rotate_trainsform_begin = clock();
 			compute_scale_rotate_transform(GTBox, GTBox_normalization, scale_rotate_normalization_to_truth, transform_normalization_to_truth);
 			time_rotate_trainsform_end = clock();
@@ -292,7 +293,8 @@ int main(int argc, char* argv[])
 				int times = tree_number / multiple_trees_number;
 				for(int j = 0; j < times; ++j)
 				{
-					cv::Mat_<float> residual = cv::Mat_<float>::zeros(landmark_number, 2);
+					Eigen::MatrixX2f residual(landmark_number, 2);
+					residual.setZero();
 					for(int k = 0; k < multiple_trees_number; ++k)
 					{
 						time_one_tree_begin = clock();
@@ -302,8 +304,8 @@ int main(int argc, char* argv[])
 							splite_begin = clock();
 							u_index = tree.splite_model[h].landmark_index1;
 							v_index = tree.splite_model[h].landmark_index2;
-							u_cur(0, 0) = landmarks_cur_normalization(u_index, 0); u_cur(0, 1) = landmarks_cur_normalization(u_index, 1);
-							v_cur(0, 0) = landmarks_cur_normalization(v_index, 0); v_cur(0, 1) = landmarks_cur_normalization(v_index, 1);
+							u_cur = landmarks_cur_normalization.row(u_index);
+							v_cur = landmarks_cur_normalization.row(v_index);
 							u_data = u_cur + tree.splite_model[h].index1_offset * scale_rotate_from_mean_to_cur;
 							v_data = v_cur + tree.splite_model[h].index2_offset * scale_rotate_from_mean_to_cur;
 							small_nor_begin = clock();
@@ -312,17 +314,17 @@ int main(int argc, char* argv[])
 							v_data_unnormalization = v_data * scale_rotate_normalization_to_truth + transform_normalization_to_truth;
 
 							small_nor_end = clock();
-							if(u_data_unnormalization(0, 0) < 0 || u_data_unnormalization(0, 0) > image.cols || 
-								u_data_unnormalization(0, 1) < 0 || u_data_unnormalization(0, 1) > image.rows)
+							if(u_data_unnormalization(0) < 0 || u_data_unnormalization(0) >= image.cols || 
+								u_data_unnormalization(1) < 0 || u_data_unnormalization(1) >= image.rows)
 								u_value = 0;
 							else
-								u_value = image.at<uchar>((int)u_data_unnormalization(0, 1), (int)u_data_unnormalization(0, 0));
+								u_value = image.at<uchar>((int)u_data_unnormalization(1), (int)u_data_unnormalization(0));
 
-							if(v_data_unnormalization(0, 0) < 0 || v_data_unnormalization(0, 0) > image.cols || 
-								v_data_unnormalization(0, 1) < 0 || v_data_unnormalization(0, 1) > image.rows)
+							if(v_data_unnormalization(0) < 0 || v_data_unnormalization(0) >= image.cols || 
+								v_data_unnormalization(1) < 0 || v_data_unnormalization(1) >= image.rows)
 								v_value = 0;
 							else
-								v_value = image.at<uchar>((int)v_data_unnormalization(0, 1), (int)v_data_unnormalization(0, 0));
+								v_value = image.at<uchar>((int)v_data_unnormalization(1), (int)v_data_unnormalization(0));
 
 							if(u_value - v_value > tree.splite_model[h].threshold)
 								index = 2 * h + 1;

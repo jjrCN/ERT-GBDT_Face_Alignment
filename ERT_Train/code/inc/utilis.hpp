@@ -43,10 +43,8 @@ class UnLeafNode{
 public:
 	int landmark_index1;
 	int landmark_index2;
-	float index1_offset_x;
-	float index1_offset_y;
-	float index2_offset_x;
-	float index2_offset_y;
+	Eigen::RowVector2f index1_offset;
+	Eigen::RowVector2f index2_offset;
 	float threshold;
 };
 

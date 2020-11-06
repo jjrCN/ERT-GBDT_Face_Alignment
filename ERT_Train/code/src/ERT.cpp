@@ -105,7 +105,7 @@ void ERT::save(const std::string &path)
 {
 	int root_number = (int)std::pow(2, tree_depth - 1) - 1;
 	int leaf_number = (int)std::pow(2, tree_depth - 1);
-	int landmark_number = global_mean_landmarks.rows();
+	int landmark_number = (int)global_mean_landmarks.rows();
 
 	json tree;
 	// pt::ptree tree;
@@ -159,16 +159,16 @@ void ERT::save(const std::string &path)
 				tree[landmark_index2_path] = regressors[i].trees()[j].model()->splite_model[k].landmark_index2;
 
 				std::string index1_offset_x = root_node + "index1_offset_x";
-				tree[index1_offset_x] = regressors[i].trees()[j].model()->splite_model[k].index1_offset_x;
+				tree[index1_offset_x] = regressors[i].trees()[j].model()->splite_model[k].index1_offset(0);
 
 				std::string index1_offset_y = root_node + "index1_offset_y";
-				tree[index1_offset_y] = regressors[i].trees()[j].model()->splite_model[k].index1_offset_y;
+				tree[index1_offset_y] = regressors[i].trees()[j].model()->splite_model[k].index1_offset(1);
 
 				std::string index2_offset_x = root_node + "index2_offset_x";
-				tree[index2_offset_x] = regressors[i].trees()[j].model()->splite_model[k].index2_offset_x;
+				tree[index2_offset_x] = regressors[i].trees()[j].model()->splite_model[k].index2_offset(0);
 
 				std::string index2_offset_y = root_node + "index2_offset_y";
-				tree[index2_offset_y] = regressors[i].trees()[j].model()->splite_model[k].index2_offset_y;
+				tree[index2_offset_y] = regressors[i].trees()[j].model()->splite_model[k].index2_offset(1);
 
 				std::string threshold = root_node + "threshold";
 				tree[threshold] = regressors[i].trees()[j].model()->splite_model[k].threshold;

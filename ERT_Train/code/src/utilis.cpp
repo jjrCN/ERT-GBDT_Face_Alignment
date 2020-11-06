@@ -28,7 +28,7 @@ bool IsDetected(const cv::Rect &box, const float &x_max, const float &x_min, con
 	if(box.width > 1.5 * width || box.width < 0.5 * width)
 		return false;
 
-	float lamda = 0.4;
+	float lamda = 0.4f;
 	if(box.x < x_min - lamda * width || box.x > x_min + lamda * width)
 		return false;
 	if(box.y < y_min - lamda * height || box.y > y_min + lamda * height)
@@ -47,7 +47,7 @@ void Loadimages(std::vector<sample> &data, const std::string &path)
 	std::string labels_path = path + "pts/";
 	std::vector<std::string> images_name;
 	getfiles(images_name, images_path);
-	int images_number = images_name.size();
+	int images_number = (int)images_name.size();
 	cv::Mat_<uchar> image;
 
 	std::string haar_feature = "./facedetection/haarcascade_frontalface_alt2.xml";
@@ -112,8 +112,8 @@ void compute_similarity_transform(
 	Eigen::Matrix2f& scale_rotate,
 	Eigen::RowVector2f& transform)
 {
-	int rows = origin.rows();
-	int cols = origin.cols();
+	int rows = (int)origin.rows();
+	int cols = (int)origin.cols();
 
 	Eigen::MatrixX3f origin_new(rows, 3);
 	origin_new.block(0, 0, rows, 2) = origin;
@@ -216,7 +216,7 @@ void GenerateTraindata(std::vector<sample> &data, const int &initialization)
 	Eigen::RowVector2f transform;
 	Eigen::MatrixX2f origin(4, 2);
 
-	int data_size_origin = data.size();
+	int data_size_origin = (int)data.size();
 	data.resize(initialization * data_size_origin);
 
 	for(int i = 0; i < data_size_origin; ++i)
