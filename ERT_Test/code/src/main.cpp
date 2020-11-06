@@ -66,7 +66,15 @@ void compute_scale_rotate_transform(
 	auto centered_target = target.rowwise() - target_centroid;
 	auto centered_origin = origin.rowwise() - origin_centroid;
 
-	scale_rotate = ((centered_origin.transpose() * centered_origin).inverse() * centered_origin.transpose()) * centered_target;
+	Eigen::Matrix2f affine_mat = ((centered_origin.transpose() * centered_origin).inverse() * centered_origin.transpose()) * centered_target;
+	float scale = sqrtf(fabsf(affine_mat.determinant()));
+	float angle = atan2f(
+		affine_mat(0, 1) - affine_mat(1, 0),
+		affine_mat(0, 0) + affine_mat(1, 1)
+		);
+	scale_rotate(0, 0) = scale_rotate(1, 1) = scale * cosf(angle);
+	scale_rotate(0, 1) = scale * sinf(angle);
+	scale_rotate(1, 0) = -scale_rotate(0, 1);
 	transform = target_centroid - origin_centroid * scale_rotate;
 
 	// int rows = (int)origin.rows();
@@ -99,8 +107,17 @@ void compute_scale_rotate(
 	auto centered_target = target.rowwise() - target_centroid;
 	auto centered_origin = origin.rowwise() - origin_centroid;
 
-	scale_rotate = ((centered_origin.transpose() * centered_origin).inverse() * centered_origin.transpose()) * centered_target;
+	Eigen::Matrix2f affine_mat = ((centered_origin.transpose() * centered_origin).inverse() * centered_origin.transpose()) * centered_target;
+	float scale = sqrtf(fabsf(affine_mat.determinant()));
+	float angle = atan2f(
+		affine_mat(0, 1) - affine_mat(1, 0),
+		affine_mat(0, 0) + affine_mat(1, 1)
+		);
+	scale_rotate(0, 0) = scale_rotate(1, 1) = scale * cosf(angle);
+	scale_rotate(0, 1) = scale * sinf(angle);
+	scale_rotate(1, 0) = -scale_rotate(0, 1);
 	// transform = target_centroid - origin_centroid * scale_rotate;
+
 	// int rows = (int)origin.rows();
 	// int cols = (int)origin.cols();
 
