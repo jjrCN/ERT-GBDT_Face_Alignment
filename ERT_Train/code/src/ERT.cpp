@@ -167,5 +167,46 @@ void ERT::save(const std::string &path) const
 
 void ERT::save_binary(const std::string& path) const
 {
+	int root_number = (int)std::pow(2, tree_depth - 1) - 1;
+	int leaf_number = (int)std::pow(2, tree_depth - 1);
+	int landmark_number = (int)global_mean_landmarks.rows();
 
+	std::ofstream fout(path, std::ios::binary);
+
+	// general info
+	fout.write((const char*)&cascade_number, sizeof(int));
+	fout.write((const char*)&tree_number, sizeof(int));
+	fout.write((const char*)&multiple_trees_number, sizeof(int));
+	fout.write((const char*)&tree_depth, sizeof(int));
+	fout.write((const char*)&landmark_number, sizeof(int));
+	fout.write((const char*)&feature_number_of_node, sizeof(int));
+	fout.write((const char*)&feature_pool_size, sizeof(int));
+	fout.write((const char*)&shrinkage_factor, sizeof(float));
+	fout.write((const char*)&padding, sizeof(float));
+	fout.write((const char*)&lamda, sizeof(float));
+
+	// global landmark mean
+	fout.write((const char*)global_mean_landmarks.data(), sizeof(float) * landmark_number * 2);
+
+	// regressors
+	for(int i = 0; i < cascade_number; ++i)
+	{
+		for(int j = 0; j < tree_number; ++j)
+		{
+			auto model = regressors[i].trees()[j].model();
+			for(int k = 0; k < root_number; ++k)
+			{
+				auto& node = model->splite_model[k];
+				fout.write((const char*)&node, sizeof(UnLeafNode));
+			}
+
+			for(int k = 0; k < leaf_number; ++k)
+			{
+				auto& leaf = model->residual_model[k];
+				fout.write((const char*)leaf.data(), sizeof(float) * landmark_number * 2);
+			}
+		}
+	}
+
+	fout.close();
 }

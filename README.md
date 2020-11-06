@@ -50,9 +50,21 @@ Please Star it. Thank you.
 ### additional change note by Rinthel Kwon
 
 - Add a root `CMakeLists.txt` as a workspace
-- Use the [gulrak's c++ file system library](https://github.com/gulrak/filesystem) instead of the linux file system library, in order to make it platform-independent
-- Use the [nlohmann's modern json library](https://github.com/nlohmann/json) instead of the boost library for saving and loading a trained model, in order to remove a big 'boost' dependency
+- Make the project platform-independency
+  - Use the [gulrak's c++ file system library](https://github.com/gulrak/filesystem)
+    instead of the linux file system library, in order to make it platform-independent
+  - Use the [nlohmann's modern json library](https://github.com/nlohmann/json)
+    instead of the boost library for saving and loading a trained model,
+    in order to remove a big 'boost' dependency
+  - Now the project can be built not only on Windows, but also macOS machine
 - Use the cmake's `ExternalProject_Add()` command to automatically build the dependencies above
+- Optimize code by using Eigen3, which can be accelerated by SIMD and use compile-time sized array,
+  instead of cv::Mat, which only supports dynamic-sized array
+  - This helps unnecessary memory allocation and deallocation processes during the learning
+  - In my experience, the learning speed seems to be about x20 times faster than the original code
+    when using my macOS machine
+- Load and save the compact binary model
+- Refactor code that can be used in both of learning and evaluating
 
 ##### how to build
 
@@ -68,6 +80,9 @@ Please Star it. Thank you.
   - [x] use Eigen3 instead of cv::Mat for acceleration
 - [x] test a learnt model
 - [x] load a learnt model saved by a json format
-- [ ] create a simple binary model, make it fast for loading and saving
-- [ ] optimize test code
+- [x] optimize test code
+  - [x] use Eigen3, just like learning code
+- [x] create a simple binary model, make it fast for loading and saving
+  - a binary model size would be about x10 times smaller than a json model.
+- [ ] 
 - [ ] remove opencv dependency (is it possible?)

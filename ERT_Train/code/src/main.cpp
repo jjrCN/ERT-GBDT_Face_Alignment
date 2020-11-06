@@ -19,12 +19,12 @@ int main(int argc, char* argv[])
 
 //============data preprocessing==============//
 	std::cout << "[Stage 2] Generating traindata" << std::endl;
-	int initialization = 5;
+	int initialization = 25;
 	GenerateTraindata(traindata, initialization);
 
 //============create ERT======================//
 	std::cout << "[Stage 3] Training ERT" << std::endl;
-	int cascade_number = 2;
+	int cascade_number = 10;
 	int tree_number = 500;
 	int multiple_trees_number = 1;
 	int tree_depth = 5;
@@ -40,9 +40,11 @@ int main(int argc, char* argv[])
 	FaceAlignmentOperator.train(traindata, validationdata);
 
 	std::string model_file_path = "./result/model/ERT.json";
+	std::string model_file_path_bin = "./result/model/ERT.bin";
 	fs::remove_all("./result/model");
 	fs::create_directories("./result/model");
 	FaceAlignmentOperator.save(model_file_path);
+	FaceAlignmentOperator.save_binary(model_file_path_bin);
 
 	std::string outputpath_train = "./result/train_result";
 

@@ -103,7 +103,7 @@ void Loadimages(std::vector<sample> &data, const std::string &path)
 	}
 
 	std::cout << data.size() << " images have been loaded." << std::endl;
-	std::cout << "Number of the landmarks : " << data[0].landmarks_truth.size() << std::endl << std::endl;
+	std::cout << "Number of the landmarks : " << data[0].landmarks_truth.rows() << std::endl << std::endl;
 }
 
 void compute_similarity_transform(

@@ -34,6 +34,26 @@ public:
 	std::vector<Eigen::MatrixX2f> residual_model;
 };
 
+class Model {
+public:
+	int cascade_number;
+	int tree_number;
+	int multiple_trees_number;
+	int tree_depth;
+	int landmark_number;
+	int feature_number_of_node;
+	int feature_pool_size;
+	float shrinkage_factor;
+	float padding;
+	float lamda;
+
+	int root_number;
+	int leaf_number;
+
+	Eigen::MatrixX2f global_mean_landmarks;
+	std::vector<std::vector<TreeModel>> regressors;
+};
+
 void compute_scale_rotate_transform(
 	const Eigen::MatrixX2f &target,
 	const Eigen::MatrixX2f &origin,
@@ -99,36 +119,42 @@ void normalization2(
 	target = (origin * scale_rotate).rowwise() + transform;
 }
 
-int main(int argc, char* argv[])
+void load_model_json(const std::string& filepath, Model& model)
 {
-	std::srand((uint32_t)std::chrono::high_resolution_clock::now().time_since_epoch().count());
-
-	std::string model_path = "./result/model/ERT.json";
-	std::ifstream fin(model_path);
+	std::ifstream fin(filepath);
 	json tree_json;
 	fin >> tree_json;
 	fin.close();
 
 	std::cout << "open model." << std::endl;
 
-	int cascade_number = tree_json["info"]["cascade_number"].get<int>();
-	int tree_number = tree_json["info"]["tree_number"].get<int>();
-	int multiple_trees_number = tree_json["info"]["multiple_trees_number"].get<int>();
-	int tree_depth = tree_json["info"]["tree_depth"].get<int>();
-	int landmark_number = tree_json["info"]["landmark_number"].get<int>();
-	float shrinkage_factor = tree_json["info"]["shrinkage_factor"].get<float>();
+	model.cascade_number = tree_json["info"]["cascade_number"].get<int>();
+	model.tree_number = tree_json["info"]["tree_number"].get<int>();
+	model.multiple_trees_number = tree_json["info"]["multiple_trees_number"].get<int>();
+	model.tree_depth = tree_json["info"]["tree_depth"].get<int>();
+	model.landmark_number = tree_json["info"]["landmark_number"].get<int>();
+	model.shrinkage_factor = tree_json["info"]["shrinkage_factor"].get<float>();
 
-	int root_number = (int)(std::pow(2, tree_depth - 1) - 1);
-	int leaf_number = (int)(std::pow(2, tree_depth - 1));
+	model.root_number = (int)(std::pow(2, model.tree_depth - 1) - 1);
+	model.leaf_number = (int)(std::pow(2, model.tree_depth - 1));
 
-	Eigen::MatrixX2f global_mean_landmarks(landmark_number, 2);
+	auto tree_depth = model.tree_depth;
+	auto cascade_number = model.cascade_number;
+	auto landmark_number = model.landmark_number;
+	auto tree_number = model.tree_number;
+	auto root_number = model.root_number;
+	auto leaf_number = model.leaf_number;
+
+	auto& global_mean_landmarks = model.global_mean_landmarks;
+	global_mean_landmarks.resize(landmark_number, 2);
 	for(int i = 0; i < landmark_number; ++i)
 	{
 		global_mean_landmarks(i, 0) = tree_json["global_mean_landmark"][2*i  ].get<float>();
 		global_mean_landmarks(i, 1) = tree_json["global_mean_landmark"][2*i+1].get<float>();
 	}
 
-	std::vector<std::vector<TreeModel> > regressors(cascade_number);
+	auto& regressors = model.regressors;
+	regressors.resize(cascade_number);
 	for(int i = 0; i < cascade_number; ++i)
 	{
 		std::cout << i + 1 << " cascade loaded." << std::endl;
@@ -169,6 +195,88 @@ int main(int argc, char* argv[])
 		
 		regressors[i] = regressor;
 	}
+}
+
+void load_model_binary(const std::string& filepath, Model& model)
+{
+	std::ifstream fin(filepath, std::ios::binary);
+	std::cout << "open model." << std::endl;
+
+	fin.read((char*)&model.cascade_number, sizeof(int));
+	fin.read((char*)&model.tree_number, sizeof(int));
+	fin.read((char*)&model.multiple_trees_number, sizeof(int));
+	fin.read((char*)&model.tree_depth, sizeof(int));
+	fin.read((char*)&model.landmark_number, sizeof(int));
+	fin.read((char*)&model.feature_number_of_node, sizeof(int));
+	fin.read((char*)&model.feature_pool_size, sizeof(int));
+	fin.read((char*)&model.shrinkage_factor, sizeof(float));
+	fin.read((char*)&model.padding, sizeof(float));
+	fin.read((char*)&model.lamda, sizeof(float));
+
+	model.root_number = (int)(std::pow(2, model.tree_depth - 1) - 1);
+	model.leaf_number = (int)(std::pow(2, model.tree_depth - 1));
+
+	auto tree_depth = model.tree_depth;
+	auto cascade_number = model.cascade_number;
+	auto landmark_number = model.landmark_number;
+	auto tree_number = model.tree_number;
+	auto root_number = model.root_number;
+	auto leaf_number = model.leaf_number;
+
+	auto& global_mean_landmarks = model.global_mean_landmarks;
+	global_mean_landmarks.resize(landmark_number, 2);
+	fin.read((char*)global_mean_landmarks.data(), sizeof(float) * landmark_number * 2);
+
+	auto& regressors = model.regressors;
+	regressors.resize(cascade_number);
+	for(int i = 0; i < cascade_number; ++i)
+	{
+		std::cout << i + 1 << " cascade loaded." << std::endl;
+		std::vector<TreeModel> regressor(tree_number);
+		for(int j = 0; j < tree_number; ++j)
+		{
+			TreeModel tree;
+			tree.splite_model.resize(root_number);
+			tree.residual_model.resize(leaf_number);
+
+			for(int k = 0; k < root_number; ++k)
+			{
+				auto& node = tree.splite_model[k];
+				fin.read((char*)&node, sizeof(UnLeafNode));
+			}
+
+			for(int k = 0; k < leaf_number; ++k)
+			{
+				auto& leaf = tree.residual_model[k];
+				leaf.resize(landmark_number, 2);
+				fin.read((char*)leaf.data(), sizeof(float) * landmark_number * 2);
+			}
+			regressor[j] = tree;
+		}
+		
+		regressors[i] = regressor;
+	}
+	fin.close();
+}
+
+int main(int argc, char* argv[])
+{
+	std::srand((uint32_t)std::chrono::high_resolution_clock::now().time_since_epoch().count());
+
+	Model model;
+	// load_model_json("./result/model/ERT.json", model);
+	load_model_binary("./result/model/ERT.bin", model);
+
+	auto landmark_number = model.landmark_number;
+	auto cascade_number = model.cascade_number;
+	auto tree_number = model.tree_number;
+	auto multiple_trees_number = model.multiple_trees_number;
+	auto root_number = model.root_number;
+	auto leaf_number = model.leaf_number;
+	auto shrinkage_factor = model.shrinkage_factor;
+
+	auto& global_mean_landmarks = model.global_mean_landmarks;
+	auto& regressors = model.regressors;
 
   	cv::Mat_<uchar> image;
   	cv::Rect GTBox_Rect;
@@ -187,6 +295,7 @@ int main(int argc, char* argv[])
 
 	Eigen::MatrixX2f landmarks_cur_normalization = global_mean_landmarks;
 	Eigen::MatrixX2f landmarks_cur(landmark_number, 2);
+	landmarks_cur.setZero();
 	Eigen::RowVector2f u_cur;
 	Eigen::RowVector2f v_cur;
 	Eigen::RowVector2f u_data;
