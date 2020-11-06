@@ -19,12 +19,12 @@ int main(int argc, char* argv[])
 
 //============data preprocessing==============//
 	std::cout << "[Stage 2] Generating traindata" << std::endl;
-	int initialization = 20;
+	int initialization = 5;
 	GenerateTraindata(traindata, initialization);
 
 //============create ERT======================//
 	std::cout << "[Stage 3] Training ERT" << std::endl;
-	int cascade_number = 10;
+	int cascade_number = 2;
 	int tree_number = 500;
 	int multiple_trees_number = 1;
 	int tree_depth = 5;

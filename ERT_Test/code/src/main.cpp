@@ -111,12 +111,12 @@ int main(int argc, char* argv[])
 
 	std::cout << "open model." << std::endl;
 
-	int cascade_number = tree_json["ERT.cascade_number"].get<int>();
-	int tree_number = tree_json["ERT.tree_number"].get<int>();
-	int multiple_trees_number = tree_json["ERT.multiple_trees_number"].get<int>();
-	int tree_depth = tree_json["ERT.tree_depth"].get<int>();
-	int landmark_number = tree_json["ERT.landmark_number"].get<int>();
-	float shrinkage_factor = tree_json["ERT.shrinkage_factor"].get<float>();
+	int cascade_number = tree_json["info"]["cascade_number"].get<int>();
+	int tree_number = tree_json["info"]["tree_number"].get<int>();
+	int multiple_trees_number = tree_json["info"]["multiple_trees_number"].get<int>();
+	int tree_depth = tree_json["info"]["tree_depth"].get<int>();
+	int landmark_number = tree_json["info"]["landmark_number"].get<int>();
+	float shrinkage_factor = tree_json["info"]["shrinkage_factor"].get<float>();
 
 	int root_number = (int)(std::pow(2, tree_depth - 1) - 1);
 	int leaf_number = (int)(std::pow(2, tree_depth - 1));
@@ -124,78 +124,45 @@ int main(int argc, char* argv[])
 	Eigen::MatrixX2f global_mean_landmarks(landmark_number, 2);
 	for(int i = 0; i < landmark_number; ++i)
 	{
-		std::stringstream stream_global_mean_landmarks;
-		stream_global_mean_landmarks << i;
-		std::string global_mean_landmarks_path_x = "ERT.parameters.global_mean_landmarks.x_" + stream_global_mean_landmarks.str();
-		std::string global_mean_landmarks_path_y = "ERT.parameters.global_mean_landmarks.y_" + stream_global_mean_landmarks.str();
-
-		global_mean_landmarks(i, 0) = tree_json[global_mean_landmarks_path_x].get<float>();
-		global_mean_landmarks(i, 1) = tree_json[global_mean_landmarks_path_y].get<float>();
+		global_mean_landmarks(i, 0) = tree_json["global_mean_landmark"][2*i  ].get<float>();
+		global_mean_landmarks(i, 1) = tree_json["global_mean_landmark"][2*i+1].get<float>();
 	}
 
 	std::vector<std::vector<TreeModel> > regressors(cascade_number);
 	for(int i = 0; i < cascade_number; ++i)
-	{	std::cout << i + 1 << " cascade loaded." << std::endl;
-		std::stringstream stream_regressor;
-		stream_regressor << i;
-		std::string regressor_path = "ERT.parameters.regressor_" + stream_regressor.str() + ".";
-
+	{
+		std::cout << i + 1 << " cascade loaded." << std::endl;
 		std::vector<TreeModel> regressor(tree_number);
 		for(int j = 0; j < tree_number; ++j)
 		{
-			std::stringstream stream_tree;
-			stream_tree << j;
-			std::string tree_path = regressor_path + "tree_" + stream_tree.str() + ".";
-
 			TreeModel tree;
 			tree.splite_model.resize(root_number);
 			tree.residual_model.resize(leaf_number);
 
+			auto& nodes_json = tree_json["regressor"][i][j]["node"];
 			for(int k = 0; k < root_number; ++k)
 			{
-				std::stringstream stream_root_node;
-				stream_root_node << k;
-				std::string root_node = tree_path + "root_node_" + stream_root_node.str() + ".";
-
-				std::string landmark_index1_path = root_node + "landmark_index1";
-				std::string landmark_index2_path = root_node + "landmark_index2";
-				std::string index1_offset_x = root_node + "index1_offset_x";
-				std::string index1_offset_y = root_node + "index1_offset_y";
-				std::string index2_offset_x = root_node + "index2_offset_x";
-				std::string index2_offset_y = root_node + "index2_offset_y";
-				std::string threshold = root_node + "threshold";
- 
-				tree.splite_model[k].landmark_index1 = tree_json[landmark_index1_path].get<int>();
-				tree.splite_model[k].landmark_index2 = tree_json[landmark_index2_path].get<int>();
-				tree.splite_model[k].index1_offset.setZero();
-				tree.splite_model[k].index2_offset.setZero();
-				tree.splite_model[k].index1_offset(0) = tree_json[index1_offset_x].get<float>();
-				tree.splite_model[k].index1_offset(1) = tree_json[index1_offset_y].get<float>();
-				tree.splite_model[k].index2_offset(0) = tree_json[index2_offset_x].get<float>();
-				tree.splite_model[k].index2_offset(1) = tree_json[index2_offset_y].get<float>();
-				tree.splite_model[k].threshold = tree_json[threshold].get<float>();
+				auto& node = tree.splite_model[k];
+				auto& node_json = nodes_json[k];
+				node.landmark_index1 = node_json["landmark_index"][0].get<int>();
+				node.landmark_index2 = node_json["landmark_index"][1].get<int>();
+				node.index1_offset(0) = node_json["offset"][0].get<float>();
+				node.index1_offset(1) = node_json["offset"][1].get<float>();
+				node.index2_offset(0) = node_json["offset"][2].get<float>();
+				node.index2_offset(1) = node_json["offset"][3].get<float>();
+				node.threshold = node_json["threshold"].get<float>();
 			}
 
+			auto& leaf_json = tree_json["regressor"][i][j]["leaf"];
 			for(int k = 0; k < leaf_number; ++k)
 			{
-				std::stringstream stream_root_node;
-				stream_root_node << k;
-				std::string root_node = tree_path + "leaf_node_" + stream_root_node.str() + ".";
-
-				Eigen::MatrixX2f leaf_node_data(landmark_number, 2);
-				leaf_node_data.setZero();
-
+				auto& leaf_node_data = tree.residual_model[k];
+				leaf_node_data.resize(landmark_number, 2);
 				for(int r = 0; r < landmark_number; ++r)
 				{
-					std::stringstream landmark_index;
-					landmark_index << r;
-					std::string residual_x = root_node + "x_" + landmark_index.str();
-					std::string residual_y = root_node + "y_" + landmark_index.str();
-
-					leaf_node_data(r, 0) = tree_json[residual_x].get<float>();
-					leaf_node_data(r, 1) = tree_json[residual_y].get<float>();
+					leaf_node_data(r, 0) = leaf_json[k][2*r  ].get<float>();
+					leaf_node_data(r, 1) = leaf_json[k][2*r+1].get<float>();
 				}
-				tree.residual_model[k] = leaf_node_data;
 			}
 			regressor[j] = tree;
 		}

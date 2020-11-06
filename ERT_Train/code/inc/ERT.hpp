@@ -30,14 +30,13 @@ public:
 		);
 
 	void train(std::vector<sample> &data, std::vector<sample> &validationdata);
-	void save(const std::string &path);
+	void save(const std::string &path) const;
+	void save_binary(const std::string& path) const;
 
 private:
 	void compute_mean_landmarks(const std::vector<sample> &data);
 
 private:
-	Eigen::MatrixX2f global_mean_landmarks;
-
 	int feature_number_of_node;
 	int feature_pool_size;
 
@@ -51,6 +50,7 @@ private:
 	int initialization;
 	float lamda;
 	
+	Eigen::MatrixX2f global_mean_landmarks;
 	std::vector<regressor> regressors;
 };
 
