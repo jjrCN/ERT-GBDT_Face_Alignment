@@ -256,15 +256,17 @@ int main(int argc, char* argv[])
 	cv::VideoCapture cap(0);
   	if(!cap.isOpened())
  	{
-    	std::cout << "Vedio open failed. please check your vedio equitment." << std::endl;
+    	std::cout << "Video open failed. please check your video equitment." << std::endl;
     	exit(0);
   	}
-  	std::cout << "open vedio." << std::endl;
+  	std::cout << "open video." << std::endl;
   	int m = 1;
   	while(m)
   	{
   		time_total_begin = clock();
-  		cap >> image;
+		cv::Mat3b colorImage;
+  		cap >> colorImage;
+		cv::cvtColor(colorImage, image, cv::COLOR_BGR2GRAY);
 
   		std::vector<cv::Rect> faces_temp;
   		time_detect_begin = clock();
@@ -350,9 +352,9 @@ int main(int argc, char* argv[])
 			{
 				int x = (int)landmarks_cur(i, 0);
 				int y = (int)landmarks_cur(i, 1);
-				cv::circle(image, cv::Point(x, y), 1, cv::Scalar(255, 255, 255), -1);
+				cv::circle(colorImage, cv::Point(x, y), 1, cv::Scalar(255, 255, 255), -1);
 			}
-			cv::rectangle(image, GTBox_Rect, cv::Scalar(255, 255, 255), 1, 1, 0);
+			cv::rectangle(colorImage, GTBox_Rect, cv::Scalar(255, 255, 255), 1, 1, 0);
 			time_total_end = clock();
 			std::cout << "time total : " << 1000 * (time_total_end - time_total_begin) / (float)CLOCKS_PER_SEC << " ms" << std::endl;
 			std::cout << "time detect: " << 1000 * (time_detect_end - time_detect_begin) / (float)CLOCKS_PER_SEC << " ms" << std::endl;
@@ -365,7 +367,8 @@ int main(int argc, char* argv[])
 			std::cout << "time two small normalization : " << 1000 * (small_nor_end - small_nor_begin) << (float)CLOCKS_PER_SEC << " ms" << std::endl;
 			std::cout << "====================================================" << std::endl;
 		}
-		cv::imshow("face", image);
-	   	cv::waitKey(40);
+		cv::imshow("face", colorImage);
+	   	cv::waitKey(1);
+		// cv::waitKey(0);
   	}
 }
