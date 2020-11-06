@@ -60,23 +60,32 @@ void compute_scale_rotate_transform(
 	Eigen::Matrix2f &scale_rotate,
 	Eigen::RowVector2f &transform)
 {
-	int rows = (int)origin.rows();
-	int cols = (int)origin.cols();
+	Eigen::RowVector2f target_centroid = target.colwise().mean();
+	Eigen::RowVector2f origin_centroid = origin.colwise().mean();
 
-	Eigen::MatrixX3f origin_new(rows, 3);
-	origin_new.block(0, 0, rows, 2) = origin;
-	origin_new.block(0, 2, rows, 1) = Eigen::VectorXf::Ones(rows);
+	auto centered_target = target.rowwise() - target_centroid;
+	auto centered_origin = origin.rowwise() - origin_centroid;
 
-	auto pinv = (origin_new.transpose() * origin_new).inverse() * origin_new.transpose();
-	auto weight = pinv * target;
+	scale_rotate = ((centered_origin.transpose() * centered_origin).inverse() * centered_origin.transpose()) * centered_target;
+	transform = target_centroid - origin_centroid * scale_rotate;
 
-	scale_rotate(0, 0) = weight(0, 0);
-	scale_rotate(0, 1) = weight(0, 1);
-	scale_rotate(1, 0) = weight(1, 0);
-	scale_rotate(1, 1) = weight(1, 1);
+	// int rows = (int)origin.rows();
+	// int cols = (int)origin.cols();
 
-	transform(0, 0) = weight(2, 0);
-	transform(0, 1) = weight(2, 1);
+	// Eigen::MatrixX3f origin_new(rows, 3);
+	// origin_new.block(0, 0, rows, 2) = origin;
+	// origin_new.block(0, 2, rows, 1) = Eigen::VectorXf::Ones(rows);
+
+	// auto pinv = (origin_new.transpose() * origin_new).inverse() * origin_new.transpose();
+	// auto weight = pinv * target;
+
+	// scale_rotate(0, 0) = weight(0, 0);
+	// scale_rotate(0, 1) = weight(0, 1);
+	// scale_rotate(1, 0) = weight(1, 0);
+	// scale_rotate(1, 1) = weight(1, 1);
+
+	// transform(0, 0) = weight(2, 0);
+	// transform(0, 1) = weight(2, 1);
 }
 
 void compute_scale_rotate(
@@ -84,20 +93,28 @@ void compute_scale_rotate(
 	const Eigen::MatrixX2f &origin,
 	Eigen::Matrix2f &scale_rotate)
 {
-	int rows = (int)origin.rows();
-	int cols = (int)origin.cols();
+	Eigen::RowVector2f target_centroid = target.colwise().mean();
+	Eigen::RowVector2f origin_centroid = origin.colwise().mean();
 
-	Eigen::MatrixX3f origin_new(rows, 3);
-	origin_new.block(0, 0, rows, 2) = origin;
-	origin_new.block(0, 2, rows, 1) = Eigen::VectorXf::Ones(rows);
+	auto centered_target = target.rowwise() - target_centroid;
+	auto centered_origin = origin.rowwise() - origin_centroid;
 
-	auto pinv = (origin_new.transpose() * origin_new).inverse() * origin_new.transpose();
-	auto weight = pinv * target;
+	scale_rotate = ((centered_origin.transpose() * centered_origin).inverse() * centered_origin.transpose()) * centered_target;
+	// transform = target_centroid - origin_centroid * scale_rotate;
+	// int rows = (int)origin.rows();
+	// int cols = (int)origin.cols();
 
-	scale_rotate(0, 0) = weight(0, 0);
-	scale_rotate(0, 1) = weight(0, 1);
-	scale_rotate(1, 0) = weight(1, 0);
-	scale_rotate(1, 1) = weight(1, 1);
+	// Eigen::MatrixX3f origin_new(rows, 3);
+	// origin_new.block(0, 0, rows, 2) = origin;
+	// origin_new.block(0, 2, rows, 1) = Eigen::VectorXf::Ones(rows);
+
+	// auto pinv = (origin_new.transpose() * origin_new).inverse() * origin_new.transpose();
+	// auto weight = pinv * target;
+
+	// scale_rotate(0, 0) = weight(0, 0);
+	// scale_rotate(0, 1) = weight(0, 1);
+	// scale_rotate(1, 0) = weight(1, 0);
+	// scale_rotate(1, 1) = weight(1, 1);
 }
 
 void normalization(cv::Mat_<float> &target, const cv::Mat_<float> &origin, const cv::Mat_<float> &scale_rotate, const cv::Mat_<float> &transform)
