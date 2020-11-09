@@ -49,18 +49,17 @@ ExternalProject_Add(
         ${CMAKE_COMMAND} -E remove_directory ${DEPENDENCY_INSTALL_DIR}/include/Eigen &&
         ${CMAKE_COMMAND} -E copy_directory ${PROJECT_BINARY_DIR}/source/eigen/Eigen
             ${DEPENDENCY_INSTALL_DIR}/include/Eigen
-TEST_COMMAND ""
-)
+    TEST_COMMAND ""
+    )
 set(DEPENDENCY_LIST ${DEPENDENCY_LIST} dep-eigen)
 
-set(OpenCV_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/../opencv/install-debug)
-# set(OpenCV_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/../opencv/install)
+# set(OpenCV_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/../opencv/install-debug)
+set(OpenCV_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/../opencv/install)
 
 find_package(OpenCV REQUIRED core highgui imgproc objdetect)
-
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 message("opencv dir: ${OpenCV_DIR}/include")
 
 
+add_subdirectory(ERT)
 add_subdirectory(ERT_Train)
 add_subdirectory(ERT_Test)
