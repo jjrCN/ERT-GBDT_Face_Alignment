@@ -118,16 +118,36 @@ void compute_similarity_transform(
 	auto centered_target = target.rowwise() - target_centroid;
 	auto centered_origin = origin.rowwise() - origin_centroid;
 
-	Eigen::Matrix2f affine_mat = ((centered_origin.transpose() * centered_origin).inverse() * centered_origin.transpose()) * centered_target;
-	float scale = sqrtf(fabsf(affine_mat.determinant()));
-	float angle = atan2f(
-		affine_mat(0, 1) - affine_mat(1, 0),
-		affine_mat(0, 0) + affine_mat(1, 1)
-		);
-	scale_rotate(0, 0) = scale_rotate(1, 1) = scale * cosf(angle);
-	scale_rotate(0, 1) = scale * sinf(angle);
-	scale_rotate(1, 0) = -scale_rotate(0, 1);
+	auto target_scale = sqrtf(centered_target.squaredNorm() / (float)target.rows());
+	auto origin_scale = sqrtf(centered_origin.squaredNorm() / (float)origin.rows());
+
+	auto cov_mat = (centered_origin / origin_scale).transpose() * (centered_target / target_scale);
+	float angle = atan2f(cov_mat(0, 1) - cov_mat(1, 0), cov_mat(0, 0) + cov_mat(1, 1));
+
+	float c = (target_scale / origin_scale) * cos(angle);
+	float s = (target_scale / origin_scale) * sin(angle);
+	scale_rotate(0, 0) =  c;
+	scale_rotate(0, 1) =  s;
+	scale_rotate(1, 0) = -s;
+	scale_rotate(1, 1) =  c;
 	transform = target_centroid - origin_centroid * scale_rotate;
+
+	float before_norm = (target - origin).squaredNorm();
+	float after_norm = (target - ((origin * scale_rotate).rowwise() + transform)).squaredNorm();
+	if (before_norm < after_norm) {
+		printf("before: %f -> after: %f, weird\n", before_norm, after_norm);
+	}
+
+	// Eigen::Matrix2f affine_mat = ((centered_origin.transpose() * centered_origin).inverse() * centered_origin.transpose()) * centered_target;
+	// float scale = sqrtf(fabsf(affine_mat.determinant()));
+	// float angle = atan2f(
+	// 	affine_mat(0, 1) - affine_mat(1, 0),
+	// 	affine_mat(0, 0) + affine_mat(1, 1)
+	// 	);
+	// scale_rotate(0, 0) = scale_rotate(1, 1) = scale * cosf(angle);
+	// scale_rotate(0, 1) = scale * sinf(angle);
+	// scale_rotate(1, 0) = -scale_rotate(0, 1);
+	// transform = target_centroid - origin_centroid * scale_rotate;
 
 	// int rows = (int)origin.rows();
 	// int cols = (int)origin.cols();

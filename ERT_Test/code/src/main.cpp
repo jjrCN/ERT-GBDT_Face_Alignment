@@ -66,15 +66,18 @@ void compute_scale_rotate_transform(
 	auto centered_target = target.rowwise() - target_centroid;
 	auto centered_origin = origin.rowwise() - origin_centroid;
 
-	Eigen::Matrix2f affine_mat = ((centered_origin.transpose() * centered_origin).inverse() * centered_origin.transpose()) * centered_target;
-	float scale = sqrtf(fabsf(affine_mat.determinant()));
-	float angle = atan2f(
-		affine_mat(0, 1) - affine_mat(1, 0),
-		affine_mat(0, 0) + affine_mat(1, 1)
-		);
-	scale_rotate(0, 0) = scale_rotate(1, 1) = scale * cosf(angle);
-	scale_rotate(0, 1) = scale * sinf(angle);
-	scale_rotate(1, 0) = -scale_rotate(0, 1);
+	auto target_scale = sqrtf(centered_target.squaredNorm() / (float)target.rows());
+	auto origin_scale = sqrtf(centered_origin.squaredNorm() / (float)origin.rows());
+
+	auto cov_mat = (centered_origin / origin_scale).transpose() * (centered_target / target_scale);
+	float angle = atan2f(cov_mat(0, 1) - cov_mat(1, 0), cov_mat(0, 0) + cov_mat(1, 1));
+
+	float c = (target_scale / origin_scale) * cos(angle);
+	float s = (target_scale / origin_scale) * sin(angle);
+	scale_rotate(0, 0) =  c;
+	scale_rotate(0, 1) =  s;
+	scale_rotate(1, 0) = -s;
+	scale_rotate(1, 1) =  c;
 	transform = target_centroid - origin_centroid * scale_rotate;
 
 	// int rows = (int)origin.rows();
@@ -107,15 +110,18 @@ void compute_scale_rotate(
 	auto centered_target = target.rowwise() - target_centroid;
 	auto centered_origin = origin.rowwise() - origin_centroid;
 
-	Eigen::Matrix2f affine_mat = ((centered_origin.transpose() * centered_origin).inverse() * centered_origin.transpose()) * centered_target;
-	float scale = sqrtf(fabsf(affine_mat.determinant()));
-	float angle = atan2f(
-		affine_mat(0, 1) - affine_mat(1, 0),
-		affine_mat(0, 0) + affine_mat(1, 1)
-		);
-	scale_rotate(0, 0) = scale_rotate(1, 1) = scale * cosf(angle);
-	scale_rotate(0, 1) = scale * sinf(angle);
-	scale_rotate(1, 0) = -scale_rotate(0, 1);
+	auto target_scale = sqrtf(centered_target.squaredNorm() / (float)target.rows());
+	auto origin_scale = sqrtf(centered_origin.squaredNorm() / (float)origin.rows());
+
+	auto cov_mat = (centered_origin / origin_scale).transpose() * (centered_target / target_scale);
+	float angle = atan2f(cov_mat(0, 1) - cov_mat(1, 0), cov_mat(0, 0) + cov_mat(1, 1));
+
+	float c = (target_scale / origin_scale) * cos(angle);
+	float s = (target_scale / origin_scale) * sin(angle);
+	scale_rotate(0, 0) =  c;
+	scale_rotate(0, 1) =  s;
+	scale_rotate(1, 0) = -s;
+	scale_rotate(1, 1) =  c;
 	// transform = target_centroid - origin_centroid * scale_rotate;
 
 	// int rows = (int)origin.rows();
@@ -380,11 +386,31 @@ int main(int argc, char* argv[])
 
   		std::vector<cv::Rect> faces_temp;
   		time_detect_begin = clock();
-		haar_cascade.detectMultiScale(image, faces_temp, 1.1, 2, 0, cv::Size(30, 30));
+		Eigen::RowVector2f bbMin = landmarks_cur.colwise().minCoeff();
+		Eigen::RowVector2f bbMax = landmarks_cur.colwise().maxCoeff();
+		auto bbSize = bbMax - bbMin;
+		auto bbCenter = (bbMax + bbMin) * 0.5f;
+		auto bbLength = bbSize.minCoeff();
+		auto paddedLength = bbLength * 1.2f;
+		bool face_found = false;
+		// if (bbSize(0) * bbSize(1) < 100) {
+			haar_cascade.detectMultiScale(image, faces_temp, 1.1, 2, 0, cv::Size(30, 30));
+			if (!faces_temp.empty()) {
+				GTBox_Rect = faces_temp[0];
+				face_found = true;
+			}
+		// }
+		// else {
+		// 	GTBox_Rect.x = (int)(bbCenter(0) - paddedLength * 0.5f);
+		// 	GTBox_Rect.y = (int)(bbCenter(1) - paddedLength * 0.5f - paddedLength * 0.12f);
+		// 	GTBox_Rect.width = (int)paddedLength;
+		// 	GTBox_Rect.height = (int)paddedLength;
+		// 	compute_scale_rotate_transform(landmarks_cur, global_mean_landmarks, scale_rotate_normalization_to_truth, transform_normalization_to_truth);
+		// 	face_found = true;
+		// }
 		time_detect_end = clock();
-		if(!faces_temp.empty())
+		if(face_found)
 		{
-			GTBox_Rect = faces_temp[0];
 			GTBox(0, 0) = (float)(GTBox_Rect.x);
 			GTBox(0, 1) = (float)(GTBox_Rect.y);
 			GTBox(1, 0) = (float)(GTBox_Rect.x + GTBox_Rect.width);
@@ -393,7 +419,7 @@ int main(int argc, char* argv[])
 			GTBox(2, 1) = (float)(GTBox_Rect.y + GTBox_Rect.height);
 			GTBox(3, 0) = (float)(GTBox_Rect.x + GTBox_Rect.width);
 			GTBox(3, 1) = (float)(GTBox_Rect.y + GTBox_Rect.height);
-			Eigen::MatrixX2f landmarks_cur_normalization = global_mean_landmarks;
+			landmarks_cur_normalization = global_mean_landmarks;
 			time_rotate_trainsform_begin = clock();
 			compute_scale_rotate_transform(GTBox, GTBox_normalization, scale_rotate_normalization_to_truth, transform_normalization_to_truth);
 			time_rotate_trainsform_end = clock();
