@@ -4,13 +4,15 @@
 
 #include <utils.hpp>
 
-class tree{
+namespace ert {
+
+class Tree {
 public:
-	tree(const int &depth = 5, const int &feature_number_of_node = 20, const float &lamda = 0.1);
+	Tree(const int &depth = 5, const int &feature_number_of_node = 20, const float &lamda = 0.1);
 
 	void train(
-		std::vector<sample> &data,
-		std::vector<sample> &validationdata,
+		std::vector<Sample> &data,
+		std::vector<Sample> &validationdata,
 		const Eigen::MatrixX2f &feature_pool,
 		const Eigen::MatrixX2f &offset,
 		const std::vector<int> &landmark_index
@@ -32,7 +34,7 @@ private:
 		);
 
 	float splite_node(
-		std::vector<sample> &data,
+		std::vector<Sample> &data,
 		const Eigen::RowVector2f &u,
 		const Eigen::RowVector2f &v, 
 		int u_index, int v_index,
@@ -50,5 +52,7 @@ private:
 
 	TreeModel _model;
 };
+
+} // namespace ert
 
 #endif

@@ -1,7 +1,9 @@
 #include <tree.hpp>
 #include <Eigen/Dense>
 
-tree::tree(const int &depth, const int &feature_number_of_node, const float &lamda)
+using namespace ert;
+
+Tree::Tree(const int &depth, const int &feature_number_of_node, const float &lamda)
 {
 	this->depth = depth;
 	this->feature_number_of_node = feature_number_of_node;
@@ -14,7 +16,7 @@ tree::tree(const int &depth, const int &feature_number_of_node, const float &lam
 	_model.residual_model.resize(_leaf_number);
 }
 
-void tree::generate_candidate_feature(
+void Tree::generate_candidate_feature(
 	const Eigen::MatrixX2f &feature_pool,
 	const Eigen::MatrixX2f &offset,
 	const std::vector<int> &landmark_index, 
@@ -50,8 +52,8 @@ void tree::generate_candidate_feature(
 	 }
 }
 
-float tree::splite_node(
-	std::vector<sample> &data,
+float Tree::splite_node(
+	std::vector<Sample> &data,
 	const Eigen::RowVector2f &u,
 	const Eigen::RowVector2f &v, 
 	int u_index, int v_index,
@@ -121,20 +123,20 @@ float tree::splite_node(
 	return -1;
 }
 
-void tree::train(std::vector<sample> &data, std::vector<sample> &validationdata, const Eigen::MatrixX2f &feature_pool, const Eigen::MatrixX2f &offset, const std::vector<int> &landmark_index)
+void Tree::train(std::vector<Sample> &data, std::vector<Sample> &validationdata, const Eigen::MatrixX2f &feature_pool, const Eigen::MatrixX2f &offset, const std::vector<int> &landmark_index)
 {
 	for(int i = 0; i < _root_number; ++i)
 	{
 		Eigen::MatrixX2f candidate_feature_offset(feature_number_of_node, 2);
 		std::vector<int> candidate_landmark_index(feature_number_of_node);
 		std::vector<float> threshold(feature_number_of_node / 2);
-		tree::generate_candidate_feature(feature_pool, offset, landmark_index, candidate_feature_offset, candidate_landmark_index, threshold);
+		Tree::generate_candidate_feature(feature_pool, offset, landmark_index, candidate_feature_offset, candidate_landmark_index, threshold);
 		float max_score;
 		int index_max_score;
 		
 		for(int j = 0; j < feature_number_of_node / 2; ++j)
 		{
-			float score =  tree::splite_node(data,
+			float score =  Tree::splite_node(data,
 				candidate_feature_offset.row(2 * j),
 				candidate_feature_offset.row(2 * j + 1),
 				candidate_landmark_index[2 * j],
@@ -162,14 +164,14 @@ void tree::train(std::vector<sample> &data, std::vector<sample> &validationdata,
 		_model.splite_model[i].index2_offset = candidate_feature_offset.row(index_max_score + 1);
 		_model.splite_model[i].threshold = threshold[index_max_score / 2];
 		
-		tree::splite_node(data,
+		Tree::splite_node(data,
 			_model.splite_model[i].index1_offset,
 			_model.splite_model[i].index2_offset,
 			_model.splite_model[i].landmark_index1,
 			_model.splite_model[i].landmark_index2,
 			_model.splite_model[i].threshold, i, true);
 
-		tree::splite_node(validationdata,
+		Tree::splite_node(validationdata,
 			_model.splite_model[i].index1_offset,
 			_model.splite_model[i].index2_offset,
 			_model.splite_model[i].landmark_index1,

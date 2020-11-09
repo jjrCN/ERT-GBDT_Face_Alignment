@@ -3,11 +3,7 @@
 
 namespace fs = ghc::filesystem;
 
-void cut_name(std::string &name, const std::string &name_with_info)
-{
-	size_t pos = name_with_info.find(".");
-	name = name_with_info.substr(0, pos);
-}
+namespace ert {
 
 void getfiles(std::vector<std::string> &names, const std::string &path)
 {
@@ -18,7 +14,7 @@ void getfiles(std::vector<std::string> &names, const std::string &path)
 	}
 }
 
-bool IsDetected(const cv::Rect &box, const float &x_max, const float &x_min, const float &y_max, const float &y_min)
+bool is_detected(const cv::Rect &box, const float &x_max, const float &x_min, const float &y_max, const float &y_min)
 {
 	float width = x_max - x_min;
 	float height = y_max - y_min;
@@ -41,12 +37,12 @@ bool IsDetected(const cv::Rect &box, const float &x_max, const float &x_min, con
 	return true;
 }
 
-void Loadimages(std::vector<sample> &data, const std::string &path)
+void load_samples(std::vector<Sample> &data, const std::string &path)
 {
 	std::string images_path = path + "png/";
 	std::string labels_path = path + "pts/";
 	std::vector<std::string> images_name;
-	getfiles(images_name, images_path);
+	get_files(images_name, images_path);
 	int images_number = (int)images_name.size();
 	cv::Mat_<uchar> image;
 
@@ -87,9 +83,9 @@ void Loadimages(std::vector<sample> &data, const std::string &path)
 
 		for(int k = 0; k < faces_temp.size(); ++k)
 		{
-			if(IsDetected(faces_temp[k], bbMax(0), bbMin(0), bbMax(1), bbMin(1)))
+			if(is_detected(faces_temp[k], bbMax(0), bbMin(0), bbMax(1), bbMin(1)))
 			{
-				sample temp;
+				Sample temp;
 				temp.image_name = images_name[i];
 				temp.image = image.clone();
 				temp.GTBox = faces_temp[k];
@@ -178,7 +174,7 @@ void normalization(
 	target = (origin * scale_rotate).rowwise() + transform;
 }
 
-void check_edge(sample &data)
+void check_edge(Sample &data)
 {
 	int rows = data.image.rows;
 	int cols = data.image.cols;
@@ -196,7 +192,7 @@ void check_edge(sample &data)
 	}
 }
 
-void GenerateValidationdata(std::vector<sample> &data, const Eigen::MatrixX2f &global_mean_landmarks)
+void generate_validation_data(std::vector<Sample> &data, const Eigen::MatrixX2f &global_mean_landmarks)
 {
 	Eigen::MatrixX2f target(4, 2);
 
@@ -240,7 +236,7 @@ void GenerateValidationdata(std::vector<sample> &data, const Eigen::MatrixX2f &g
 	}
 }
 
-void GenerateTraindata(std::vector<sample> &data, const int &initialization)
+void generate_train_data(std::vector<Sample> &data, const int &initialization)
 {
 	Eigen::MatrixX2f target(4, 2);
 
@@ -306,7 +302,7 @@ void GenerateTraindata(std::vector<sample> &data, const int &initialization)
 	std::cout << data.size() << " train images have been generated." << std::endl << std::endl;
 }
 
-void output(const sample &data, const std::string &path)
+void output(const Sample &data, const std::string &path)
 {
 	cv::Mat_<uchar> image = data.image.clone();
 	cv::rectangle(image, data.GTBox, cv::Scalar(255, 255, 255), 3, 1, 0);
@@ -326,7 +322,7 @@ void output(const sample &data, const std::string &path)
 	cv::imwrite(path_image.c_str(), image);
 }
 
-float compute_Error(const std::vector<sample> &data)
+float compute_error(const std::vector<Sample> &data)
 {
 	int ll = 36;
 	int lr = 41;
@@ -365,3 +361,5 @@ float compute_Error(const std::vector<sample> &data)
 
 	return total_error / data.size();
 }
+
+} // namespace ert

@@ -2,7 +2,7 @@ set(source
     ./code/src/ERT.cpp
     ./code/src/regressor.cpp
     ./code/src/tree.cpp
-    ./code/src/utilis.cpp
+    ./code/src/utils.cpp
     )
 
 add_library(ERT STATIC ${source})

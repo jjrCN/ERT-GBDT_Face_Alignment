@@ -4,9 +4,11 @@
 #include <tree.hpp>
 #include <Eigen/Dense>
 
-class regressor{
+namespace ert {
+
+class Regressor{
 public:
-	regressor(
+	Regressor(
 		const int &tree_number = 500,
 		const int &multiple_trees_number = 10,
 		const int &tree_depth = 5,
@@ -17,17 +19,17 @@ public:
 		const float &lamda = 0.1
 		);
 
-	void train(std::vector<sample> &data, std::vector<sample> &validationdata, const Eigen::MatrixX2f &global_mean_landmarks);
+	void train(std::vector<Sample> &data, std::vector<Sample> &validationdata, const Eigen::MatrixX2f &global_mean_landmarks);
 
-	const std::vector<tree>& trees() const {return _trees;};
+	const std::vector<Tree>& trees() const {return _trees;};
 
 private:
 
-	void compute_similarity_transform_with_mean(std::vector<sample> &data, const Eigen::MatrixX2f &global_mean_landmarks);
+	void compute_similarity_transform_with_mean(std::vector<Sample> &data, const Eigen::MatrixX2f &global_mean_landmarks);
 
 	void generate_feature_pool(const Eigen::MatrixX2f &global_mean_landmarks);
 
-	void show_feature_node(const sample &data);
+	void show_feature_node(const Sample &data);
 
 private:
 	int feature_number_of_node;
@@ -40,11 +42,13 @@ private:
 	int tree_depth;
 	float lamda;
 
-	std::vector<tree> _trees;
+	std::vector<Tree> _trees;
 
 	Eigen::MatrixX2f feature_pool;
 	std::vector<int> landmark_index;
 	Eigen::MatrixX2f offset;
 };
+
+} // namespace ert
 
 #endif

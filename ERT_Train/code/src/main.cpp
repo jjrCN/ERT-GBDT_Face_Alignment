@@ -3,24 +3,25 @@
 #include <chrono>
 
 namespace fs = ghc::filesystem;
+using namespace ert;
 
 int main(int argc, char* argv[])
 {
 	std::srand((uint32_t)std::chrono::high_resolution_clock::now().time_since_epoch().count());
 //============load image======================//
 	std::cout << "[Stage 1] Loading image" << std::endl;
-	std::vector<sample> traindata;
+	std::vector<Sample> traindata;
 	std::string trainpath = "./dataset/lfpw/trainset/";
-	Loadimages(traindata, trainpath);
+	load_samples(traindata, trainpath);
 
-	std::vector<sample> validationdata;
+	std::vector<Sample> validationdata;
 	std::string validationpath = "./dataset/lfpw/testset/";
-	Loadimages(validationdata, validationpath);
+	load_samples(validationdata, validationpath);
 
 //============data preprocessing==============//
 	std::cout << "[Stage 2] Generating traindata" << std::endl;
-	int initialization = 25;
-	GenerateTraindata(traindata, initialization);
+	int initialization = 20;
+	generate_train_data(traindata, initialization);
 
 //============create ERT======================//
 	std::cout << "[Stage 3] Training ERT" << std::endl;

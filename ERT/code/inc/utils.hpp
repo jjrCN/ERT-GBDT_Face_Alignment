@@ -18,7 +18,9 @@
 
 #include <Eigen/Dense>
 
-class sample{
+namespace ert {
+
+class Sample {
 public:
 	std::string image_name;
 	cv::Mat_<uchar> image;
@@ -54,19 +56,13 @@ public:
 	std::vector<Eigen::MatrixX2f> residual_model;
 };
 
-void cut_name(std::string &name, const std::string &name_with_info);
+void load_samples(std::vector<Sample> &data, const std::string &path);
 
-void getfiles(std::vector<std::string> &names, const std::string &path);
+void output(const Sample &data, const std::string &path);
 
-bool IsDetected(const cv::Rect &box, const float &x_max, const float &x_min, const float &y_max, const float &y_min);
+void generate_train_data(std::vector<Sample> &data, const int &initialization);
 
-void Loadimages(std::vector<sample> &data, const std::string &path);
-
-void output(const sample &data, const std::string &path);
-
-void GenerateTraindata(std::vector<sample> &data, const int &initialization);
-
-void GenerateValidationdata(std::vector<sample> &data, const Eigen::MatrixX2f &global_mean_landmarks);
+void generate_validation_data(std::vector<Sample> &data, const Eigen::MatrixX2f &global_mean_landmarks);
 
 void compute_similarity_transform(
 	const Eigen::MatrixX2f& target,
@@ -80,8 +76,10 @@ void normalization(
 	const Eigen::Matrix2f &scale_rotate,
 	const Eigen::RowVector2f &transform);
 
-void check_edge(sample &data);
+void check_edge(Sample &data);
 
-float compute_Error(const std::vector<sample> &data);
+float compute_error(const std::vector<Sample> &data);
+
+} // namespace ert
 
 #endif

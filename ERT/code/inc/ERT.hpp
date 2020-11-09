@@ -12,7 +12,7 @@
 
 #include <regressor.hpp>
 
-// namespace pt = boost::property_tree;
+namespace ert {
 
 class ERT{
 public:
@@ -29,12 +29,12 @@ public:
 		const float &lamda = 0.1
 		);
 
-	void train(std::vector<sample> &data, std::vector<sample> &validationdata);
+	void train(std::vector<Sample> &data, std::vector<Sample> &validationdata);
 	void save(const std::string &path) const;
 	void save_binary(const std::string& path) const;
 
 private:
-	void compute_mean_landmarks(const std::vector<sample> &data);
+	void compute_mean_landmarks(const std::vector<Sample> &data);
 
 private:
 	int feature_number_of_node;
@@ -51,7 +51,9 @@ private:
 	float lamda;
 	
 	Eigen::MatrixX2f global_mean_landmarks;
-	std::vector<regressor> regressors;
+	std::vector<Regressor> regressors;
 };
+
+} // namespace ert
 
 #endif

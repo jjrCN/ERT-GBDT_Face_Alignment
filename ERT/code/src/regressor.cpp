@@ -1,6 +1,8 @@
 #include <regressor.hpp>
 
-regressor::regressor(const int &tree_number, const int &multiple_trees_number, const int &tree_depth, 
+using namespace ert;
+
+Regressor::Regressor(const int &tree_number, const int &multiple_trees_number, const int &tree_depth, 
 		const int &feature_number_of_node, const int &feature_pool_size, const float &shrinkage_factor, const float &padding, const float &lamda)
 {	
 	this->tree_number = tree_number;
@@ -18,7 +20,7 @@ regressor::regressor(const int &tree_number, const int &multiple_trees_number, c
 	offset.setZero();
 	landmark_index.resize(feature_pool_size);
 
-	tree tree_template(tree_depth, feature_number_of_node, lamda);
+	Tree tree_template(tree_depth, feature_number_of_node, lamda);
 
 	for(int i = 0; i < tree_number; ++i)
 	{
@@ -26,7 +28,7 @@ regressor::regressor(const int &tree_number, const int &multiple_trees_number, c
 	}
 }
 
-void regressor::compute_similarity_transform_with_mean(std::vector<sample> &data, const Eigen::MatrixX2f &global_mean_landmarks)
+void Regressor::compute_similarity_transform_with_mean(std::vector<Sample> &data, const Eigen::MatrixX2f &global_mean_landmarks)
 {
 	for(int i = 0; i < data.size(); ++i)
 	{
@@ -38,7 +40,7 @@ void regressor::compute_similarity_transform_with_mean(std::vector<sample> &data
 	}
 }
 
-void regressor::generate_feature_pool(const Eigen::MatrixX2f &global_mean_landmarks)
+void Regressor::generate_feature_pool(const Eigen::MatrixX2f &global_mean_landmarks)
 {
 	Eigen::RowVector2f bbMin = global_mean_landmarks.colwise().minCoeff() - Eigen::RowVector2f(padding, padding);
 	Eigen::RowVector2f bbMax = global_mean_landmarks.colwise().maxCoeff() + Eigen::RowVector2f(padding, padding);
@@ -74,7 +76,7 @@ void regressor::generate_feature_pool(const Eigen::MatrixX2f &global_mean_landma
 	}
 }
 
-void regressor::show_feature_node(const sample &data)
+void Regressor::show_feature_node(const Sample &data)
 {
 	cv::Mat_<uchar> image = data.image;
 	Eigen::MatrixX2f node(feature_pool_size, 2);
@@ -94,11 +96,11 @@ void regressor::show_feature_node(const sample &data)
 	cv::imwrite(path.c_str(), image);
 }
 
-void regressor::train(std::vector<sample> &data, std::vector<sample> &validationdata, const Eigen::MatrixX2f &global_mean_landmarks)
+void Regressor::train(std::vector<Sample> &data, std::vector<Sample> &validationdata, const Eigen::MatrixX2f &global_mean_landmarks)
 {
-	regressor::compute_similarity_transform_with_mean(data, global_mean_landmarks);
-	regressor::compute_similarity_transform_with_mean(validationdata, global_mean_landmarks);
-	regressor::generate_feature_pool(global_mean_landmarks);
+	Regressor::compute_similarity_transform_with_mean(data, global_mean_landmarks);
+	Regressor::compute_similarity_transform_with_mean(validationdata, global_mean_landmarks);
+	Regressor::generate_feature_pool(global_mean_landmarks);
 
 	int landmark_number = (int)global_mean_landmarks.rows();
 	int time = tree_number / multiple_trees_number;

@@ -4,6 +4,7 @@
 
 namespace fs = ghc::filesystem;
 using namespace nlohmann;
+using namespace ert;
 
 ERT::ERT(const int &cascade_number, const int &tree_number, const int &multiple_trees_number, const int &tree_depth, 
 		const int &feature_number_of_node, const int &feature_pool_size, const float &shrinkage_factor, const float &padding, const int &initialization, const float &lamda)
@@ -24,7 +25,7 @@ ERT::ERT(const int &cascade_number, const int &tree_number, const int &multiple_
 	this->initialization = initialization;
 	this->lamda = lamda;
 
-	regressor regressor_template(tree_number, multiple_trees_number, tree_depth, feature_number_of_node, feature_pool_size, shrinkage_factor, padding, lamda);
+	Regressor regressor_template(tree_number, multiple_trees_number, tree_depth, feature_number_of_node, feature_pool_size, shrinkage_factor, padding, lamda);
 
 	for(int i = 0; i < cascade_number; ++i)
 	{
@@ -33,7 +34,7 @@ ERT::ERT(const int &cascade_number, const int &tree_number, const int &multiple_
 	std::cout << "ERT model has been created." << std::endl;
 }
 
-void ERT::compute_mean_landmarks(const std::vector<sample> &data)
+void ERT::compute_mean_landmarks(const std::vector<Sample> &data)
 {
 	global_mean_landmarks.resize(data[0].landmarks_truth.rows(), 2);
 	global_mean_landmarks.setZero();
@@ -47,7 +48,7 @@ void ERT::compute_mean_landmarks(const std::vector<sample> &data)
 
 }
 
-void ERT::train(std::vector<sample> &data, std::vector<sample> &validationdata)
+void ERT::train(std::vector<Sample> &data, std::vector<Sample> &validationdata)
 {
 	if(data.empty())
 	{
@@ -57,7 +58,7 @@ void ERT::train(std::vector<sample> &data, std::vector<sample> &validationdata)
 
 	ERT::compute_mean_landmarks(data);
 
-	GenerateValidationdata(validationdata, global_mean_landmarks);
+	generate_validation_data(validationdata, global_mean_landmarks);
 
 	for(int i = 0; i < cascade_number; ++i)
 	{
@@ -95,8 +96,8 @@ void ERT::train(std::vector<sample> &data, std::vector<sample> &validationdata)
 			output(validationdata[j], outputpath_vali);
 		}
 
-		std::cout << "training error = " << compute_Error(data) << std::endl;
-		std::cout << "validation error = " << compute_Error(validationdata) << std::endl << std::endl;
+		std::cout << "training error = " << compute_error(data) << std::endl;
+		std::cout << "validation error = " << compute_error(validationdata) << std::endl << std::endl;
 	}
 	std::cout << "[Finish]" << std::endl;
 }
