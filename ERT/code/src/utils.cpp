@@ -5,7 +5,7 @@ namespace fs = ghc::filesystem;
 
 namespace ert {
 
-void getfiles(std::vector<std::string> &names, const std::string &path)
+void get_files(std::vector<std::string> &names, const std::string &path)
 {
 	for (auto p : fs::recursive_directory_iterator(path)) {
 		if (p.is_directory())
@@ -324,42 +324,21 @@ void output(const Sample &data, const std::string &path)
 
 float compute_error(const std::vector<Sample> &data)
 {
-	int ll = 36;
-	int lr = 41;
-	int rl = 42;
-	int rr = 47;
+	const int left_eye_start_idx = 36;
+	const int right_eye_start_idx = 42;
+	const int eye_landmark_count = 6;
 
 	float total_error = 0;
 	for(int i = 0; i < data.size(); ++i)
 	{
-		float l_x = 0, l_y = 0, r_x = 0, r_y = 0;
-		for(int j = ll; j <= lr; ++j)
-		{
-			l_x += data[i].landmarks_cur(j, 0);
-			l_y += data[i].landmarks_cur(j, 1);
-		}
-
-		for(int j = rl; j <= rr; ++j)
-		{
-			r_x += data[i].landmarks_cur(j, 0);
-			r_y += data[i].landmarks_cur(j, 1);
-		}
-
-		l_x /= (lr - ll + 1); l_y /= (lr - ll + 1);
-		r_x /= (rr - rl + 1); r_y /= (rr - rl + 1);
-
-		float dis = std::sqrt(std::pow(l_x - r_x, 2) + std::pow(l_y - r_y, 2));
-		float error = 0;
-		for(int j = 0; j < data[i].landmarks_cur.rows(); ++j)
-		{
-			error += std::sqrt(std::pow(data[i].landmarks_truth(j, 0) - data[i].landmarks_cur(j, 0), 2) 
-				+ std::pow(data[i].landmarks_truth(j, 1) - data[i].landmarks_cur(j, 1), 2));
-		}
-
-		total_error += (error / data[i].landmarks_cur.rows()) / dis;
+		auto left_eye = data[i].landmarks_cur.block(left_eye_start_idx, 0, eye_landmark_count, 2).colwise().mean();
+		auto right_eye = data[i].landmarks_cur.block(right_eye_start_idx, 0, eye_landmark_count, 2).colwise().mean();
+		auto dis = (left_eye - right_eye).norm();
+		auto error = (data[i].landmarks_truth - data[i].landmarks_cur).rowwise().norm().mean() / dis;
+		total_error += error;
 	}
 
-	return total_error / data.size();
+	return total_error / (float)data.size();
 }
 
 } // namespace ert
