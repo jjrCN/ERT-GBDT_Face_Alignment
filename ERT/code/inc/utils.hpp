@@ -58,6 +58,8 @@ public:
 
 void load_samples(std::vector<Sample> &data, const std::string &path);
 
+void load_pts(const std::string& filename, Eigen::MatrixX2f& points);
+
 void output(const Sample &data, const std::string &path);
 
 void generate_train_data(std::vector<Sample> &data, const int &initialization);

@@ -24,14 +24,14 @@ bool is_detected(const cv::Rect &box, const float &x_max, const float &x_min, co
 	if(box.width > 1.5 * width || box.width < 0.5 * width)
 		return false;
 
-	float lamda = 0.4f;
-	if(box.x < x_min - lamda * width || box.x > x_min + lamda * width)
+	float lambda = 0.4f;
+	if(box.x < x_min - lambda * width || box.x > x_min + lambda * width)
 		return false;
-	if(box.y < y_min - lamda * height || box.y > y_min + lamda * height)
+	if(box.y < y_min - lambda * height || box.y > y_min + lambda * height)
 		return false;
-	if(box.x + box.width < x_max - lamda * width || box.x + box.width > x_max + lamda * width)
+	if(box.x + box.width < x_max - lambda * width || box.x + box.width > x_max + lambda * width)
 		return false;
-	if(box.y + box.height < y_max - lamda * height || box.y + box.height > y_max + lamda * height)
+	if(box.y + box.height < y_max - lambda * height || box.y + box.height > y_max + lambda * height)
 		return false;
 
 	return true;
@@ -56,24 +56,8 @@ void load_samples(std::vector<Sample> &data, const std::string &path)
 		image = cv::imread(image_path.c_str(), 0);
 		
 		std::string label_path = labels_path + images_name[i] + ".pts";
-		std::ifstream fin;
-		fin.open(label_path, std::ios::in);
-
-		std::string temp;
-		getline(fin, temp);
-		int landmarks_number = 0;
-		fin >> temp >> landmarks_number;
-		getline(fin, temp);
-		getline(fin, temp);
-
-		Eigen::MatrixX2f landmark(landmarks_number, 2);
-		for(int j = 0; j < landmarks_number; ++j)
-		{
-			float x, y;
-			fin >> x >> y;
-			landmark.row(j) = Eigen::Vector2f(x, y);
-			getline(fin, temp);
-		}
+		Eigen::MatrixX2f landmark;
+		load_pts(label_path, landmark);
 
 		Eigen::RowVector2f bbMin = landmark.colwise().minCoeff();
 		Eigen::RowVector2f bbMax = landmark.colwise().maxCoeff();
@@ -83,7 +67,7 @@ void load_samples(std::vector<Sample> &data, const std::string &path)
 
 		for(int k = 0; k < faces_temp.size(); ++k)
 		{
-			if(is_detected(faces_temp[k], bbMax(0), bbMin(0), bbMax(1), bbMin(1)))
+			if (is_detected(faces_temp[k], bbMax(0), bbMin(0), bbMax(1), bbMin(1)))
 			{
 				Sample temp;
 				temp.image_name = images_name[i];
@@ -94,12 +78,34 @@ void load_samples(std::vector<Sample> &data, const std::string &path)
 				data.push_back(temp);
 			}
 		}
-		if(i % (images_number / 10) == 0 && i != 0)
-				std::cout << 10 * i / (images_number / 10) << "% has finished." << std::endl;
+		if (i % (images_number / 10) == 0 && i != 0)
+			std::cout << 10 * i / (images_number / 10) << "% has finished." << std::endl;
 	}
 
 	std::cout << data.size() << " images have been loaded." << std::endl;
 	std::cout << "Number of the landmarks : " << data[0].landmarks_truth.rows() << std::endl << std::endl;
+}
+
+void load_pts(const std::string& filename, Eigen::MatrixX2f& points)
+{
+	std::ifstream fin;
+	fin.open(filename, std::ios::in);
+
+	std::string temp;
+	getline(fin, temp);
+	int landmarks_number = 0;
+	fin >> temp >> landmarks_number;
+	getline(fin, temp);
+	getline(fin, temp);
+
+	points.resize(landmarks_number, 2);
+	for(int j = 0; j < landmarks_number; ++j)
+	{
+		float x, y;
+		fin >> x >> y;
+		points.row(j) = Eigen::Vector2f(x, y);
+		getline(fin, temp);
+	}
 }
 
 void compute_similarity_transform(
