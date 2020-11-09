@@ -2,7 +2,7 @@
 #ifndef _TREE_HPP_
 #define _TREE_HPP_
 
-#include <utilis.hpp>
+#include <utils.hpp>
 
 class tree{
 public:

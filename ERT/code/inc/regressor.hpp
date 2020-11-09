@@ -6,8 +6,16 @@
 
 class regressor{
 public:
-	regressor(const int &tree_number = 500, const int &multiple_trees_number = 10, const int &tree_depth = 5, const int &feature_number_of_node = 20, 
-		const int &feature_pool_size = 400, const float &shrinkage_factor = 0.1, const float &padding = 0.1, const float &lamda = 0.1);
+	regressor(
+		const int &tree_number = 500,
+		const int &multiple_trees_number = 10,
+		const int &tree_depth = 5,
+		const int &feature_number_of_node = 20,
+		const int &feature_pool_size = 400,
+		const float &shrinkage_factor = 0.1,
+		const float &padding = 0.1,
+		const float &lamda = 0.1
+		);
 
 	void train(std::vector<sample> &data, std::vector<sample> &validationdata, const Eigen::MatrixX2f &global_mean_landmarks);
 

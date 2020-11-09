@@ -1,4 +1,4 @@
-#include <utilis.hpp>
+#include <utils.hpp>
 #include <ghc/filesystem.hpp>
 
 namespace fs = ghc::filesystem;
