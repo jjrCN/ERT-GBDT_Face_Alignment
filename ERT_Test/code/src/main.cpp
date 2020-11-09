@@ -1,3 +1,8 @@
+#ifdef WIN32
+#define NOMINMAX
+#endif
+#include <clipp.h>
+
 #include <cmath>
 #include <sstream>
 #include <iostream>
@@ -20,6 +25,19 @@ using namespace ert;
 
 int main(int argc, char* argv[])
 {
+	bool help = false;
+	std::string input_filename;
+    auto cli = (
+        clipp::option("-h", "--help").set(help, true),
+        (clipp::option("-i", "--input") & clipp::value("input image filename").set(input_filename))
+    );
+
+	auto parse_result = clipp::parse(argc, argv, cli);
+    if (!parse_result || help) {
+        std::cout << clipp::make_man_page(cli, argv[0]);
+        return -1;
+    }
+
 	// Model model;
 	ERT ert;
 	ert.load_binary("./result/model/ERT.bin");
@@ -28,6 +46,44 @@ int main(int argc, char* argv[])
 	cv::CascadeClassifier haar_cascade;
 	haar_cascade.load(haar_feature);
 	std::cout << "load face detector completed." << std::endl;
+
+	auto convert_cv_rect = [](const cv::Rect& rect) {
+		return Eigen::Vector4f(
+			(float)(rect.x),
+			(float)(rect.x + rect.width),
+			(float)(rect.y),
+			(float)(rect.y + rect.height));
+	};
+
+	auto draw_landmark_rect = [](cv::Mat& colorImage, const cv::Rect& rect, const Eigen::MatrixX2f& landmark) {
+		for(int i = 0; i < (int)landmark.rows(); ++i)
+		{
+			int x = (int)landmark(i, 0);
+			int y = (int)landmark(i, 1);
+			cv::circle(colorImage, cv::Point(x, y), 1, cv::Scalar(255, 255, 255), -1);
+		}
+		cv::rectangle(colorImage, rect, cv::Scalar(255, 255, 255), 1, 1, 0);
+	};
+
+	Eigen::MatrixX2f landmark;
+	if (!input_filename.empty()) {
+		auto colorImage = cv::imread(input_filename);
+		cv::Mat_<uchar> image;
+		cv::cvtColor(colorImage, image, cv::COLOR_BGR2GRAY);
+
+  		std::vector<cv::Rect> faces_temp;
+		haar_cascade.detectMultiScale(image, faces_temp, 1.1, 2, 0, cv::Size(30, 30));
+
+		if (!faces_temp.empty()) {
+			ert.find_landmark(image, convert_cv_rect(faces_temp[0]), landmark);
+			draw_landmark_rect(colorImage, faces_temp[0], landmark);
+		}
+
+		cv::imshow("face", colorImage);
+	   	cv::waitKey(0);
+
+		exit(0);
+	}
 
 	cv::VideoCapture cap(0);
   	if(!cap.isOpened())
@@ -39,7 +95,7 @@ int main(int argc, char* argv[])
   	int m = 1;
   	while(m)
   	{
-		cv::Mat3b colorImage;
+		cv::Mat colorImage;
 		cv::Mat_<uchar> image;
   		cap >> colorImage;
 		cv::cvtColor(colorImage, image, cv::COLOR_BGR2GRAY);
@@ -47,22 +103,8 @@ int main(int argc, char* argv[])
   		std::vector<cv::Rect> faces_temp;
 		haar_cascade.detectMultiScale(image, faces_temp, 1.1, 2, 0, cv::Size(30, 30));
 		if (!faces_temp.empty()) {
-			Eigen::Vector4f bbox;
-			bbox(0) = (float)(faces_temp[0].x);
-			bbox(1) = (float)(faces_temp[0].x + faces_temp[0].width);
-			bbox(2) = (float)(faces_temp[0].y);
-			bbox(3) = (float)(faces_temp[0].y + faces_temp[0].height);
-
-			Eigen::MatrixX2f landmark;
-			ert.find_landmark(image, bbox, landmark);
-
-			for(int i = 0; i < (int)landmark.rows(); ++i)
-			{
-				int x = (int)landmark(i, 0);
-				int y = (int)landmark(i, 1);
-				cv::circle(colorImage, cv::Point(x, y), 1, cv::Scalar(255, 255, 255), -1);
-			}
-			cv::rectangle(colorImage, faces_temp[0], cv::Scalar(255, 255, 255), 1, 1, 0);
+			ert.find_landmark(image, convert_cv_rect(faces_temp[0]), landmark);
+			draw_landmark_rect(colorImage, faces_temp[0], landmark);
 		}
 
 		cv::imshow("face", colorImage);

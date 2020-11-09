@@ -73,9 +73,8 @@ Please Star it. Thank you.
 
 ##### to-do list
 
-- [ ] generate image and landmark file list without using subdirectory
-- [ ] utilize command line arguments to receive learning parameter
-- [ ] use [another face detection model](https://github.com/ShiqiYu/libfacedetection.git)
+- [x] generate image and landmark file list without using subdirectory
+- [x] utilize command line arguments to receive learning parameter
 - [x] optimize the learning code for fast learning 
   - [x] use Eigen3 instead of cv::Mat for acceleration
 - [x] test a learnt model
@@ -87,6 +86,7 @@ Please Star it. Thank you.
 - [x] refactor
   - [x] renaming and following naming convension
   - [x] reuse the ERT model code for training / testing
+- [ ] use [another face detection model](https://github.com/ShiqiYu/libfacedetection.git)
 - [ ] find tracking method that does not have to reset normalized landmark shape with mean shape
   - currently normalized shape is reset by global mean shape for every frame
   - but when we use previous frame's shape, the shape become drifted rapidly. why?

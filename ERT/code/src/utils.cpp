@@ -54,7 +54,7 @@ void load_samples(std::vector<Sample> &data, const std::string &path)
 	for(int i = 0; i < images_number; ++i)
 	{
 		fs::path image_path = images_name[i];
-		image = cv::imread(image_path.c_str(), 0);
+		image = cv::imread(image_path.c_str(), cv::IMREAD_GRAYSCALE);
 		
 		auto label_path = image_path.parent_path() / (std::string(image_path.stem()) + ".pts");
 		Eigen::MatrixX2f landmark;
