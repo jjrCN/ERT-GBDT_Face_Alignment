@@ -33,7 +33,7 @@ private:
 		std::vector<float> &threshold
 		);
 
-	float splite_node(
+	float split_node(
 		std::vector<Sample> &data,
 		const Node& node,
 		int index,

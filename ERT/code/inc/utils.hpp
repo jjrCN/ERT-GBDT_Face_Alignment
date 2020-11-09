@@ -27,7 +27,7 @@ public:
 	cv::Rect GTBox;
 
 	Eigen::MatrixX2f landmarks_truth;
-	Eigen::MatrixX2f landmarks_truth_normalizaiotn;
+	Eigen::MatrixX2f landmarks_truth_normalization;
 	Eigen::MatrixX2f landmarks_cur;
 	Eigen::MatrixX2f landmarks_cur_normalization;
 	Eigen::Matrix2f scale_rotate_normalization;
@@ -73,7 +73,7 @@ public:
 
 class TreeModel{
 public:
-	std::vector<Node> splite_model;
+	std::vector<Node> split_model;
 	std::vector<Eigen::MatrixX2f> residual_model;
 };
 

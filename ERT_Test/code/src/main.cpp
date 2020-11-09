@@ -85,13 +85,13 @@ void load_model_json(const std::string& filepath, Model& model)
 		for(int j = 0; j < tree_number; ++j)
 		{
 			TreeModel tree;
-			tree.splite_model.resize(root_number);
+			tree.split_model.resize(root_number);
 			tree.residual_model.resize(leaf_number);
 
 			auto& nodes_json = tree_json["regressor"][i][j]["node"];
 			for(int k = 0; k < root_number; ++k)
 			{
-				auto& node = tree.splite_model[k];
+				auto& node = tree.split_model[k];
 				auto& node_json = nodes_json[k];
 				node.landmark_index1 = node_json["landmark_index"][0].get<int>();
 				node.landmark_index2 = node_json["landmark_index"][1].get<int>();
@@ -159,12 +159,12 @@ void load_model_binary(const std::string& filepath, Model& model)
 		for(int j = 0; j < tree_number; ++j)
 		{
 			TreeModel tree;
-			tree.splite_model.resize(root_number);
+			tree.split_model.resize(root_number);
 			tree.residual_model.resize(leaf_number);
 
 			for(int k = 0; k < root_number; ++k)
 			{
-				auto& node = tree.splite_model[k];
+				auto& node = tree.split_model[k];
 				fin.read((char*)&node, sizeof(Node));
 			}
 
@@ -241,8 +241,8 @@ int main(int argc, char* argv[])
 	clock_t small_nor_end;
 	clock_t normalization_begin;
 	clock_t normalization_end;
-	clock_t splite_begin;
-	clock_t splite_end;
+	clock_t split_begin;
+	clock_t split_end;
 
 	cv::VideoCapture cap(0);
   	if(!cap.isOpened())
@@ -317,8 +317,8 @@ int main(int argc, char* argv[])
 						TreeModel &tree = regressors[i][j * multiple_trees_number + k];
 						for(int h = 0; h < root_number; h = index)
 						{
-							splite_begin = clock();
-							bool left_node = tree.splite_model[h].evaluate(
+							split_begin = clock();
+							bool left_node = tree.split_model[h].evaluate(
 								image,
 								landmarks_cur_normalization,
 								scale_rotate_from_mean_to_cur,
@@ -326,7 +326,7 @@ int main(int argc, char* argv[])
 								transform_normalization_to_truth
 								);
 							index = 2 * h + (left_node ? 1 : 2);
-							splite_end = clock();
+							split_end = clock();
 						}
 					
 						residual += tree.residual_model[index - root_number];
@@ -355,7 +355,7 @@ int main(int argc, char* argv[])
 			std::cout << "time alignment : " << 1000 * (time_end - time_begin) / (float)CLOCKS_PER_SEC << " ms" << std::endl;
 			std::cout << "time cascade : " << 1000 * (time_one_cascade_end - time_one_cascade_begin) << (float)CLOCKS_PER_SEC << " ms" << std::endl;
 			std::cout << "time one tree : " << 1000 * (time_one_tree_end - time_one_tree_begin) << (float)CLOCKS_PER_SEC << " ms" << std::endl;
-			std::cout << "time one node : " << 1000 * (splite_end - splite_begin) << (float)CLOCKS_PER_SEC << " ms" << std::endl;
+			std::cout << "time one node : " << 1000 * (split_end - split_begin) << (float)CLOCKS_PER_SEC << " ms" << std::endl;
 			std::cout << "time compute rotate : " << 1000 * (time_rotate_trainsform_end - time_rotate_trainsform_begin) << (float)CLOCKS_PER_SEC << " ms" << std::endl;
 			std::cout << "time normalization : " << 1000 * (normalization_end - normalization_begin) << (float)CLOCKS_PER_SEC << " ms" << std::endl;
 			std::cout << "time two small normalization : " << 1000 * (small_nor_end - small_nor_begin) << (float)CLOCKS_PER_SEC << " ms" << std::endl;

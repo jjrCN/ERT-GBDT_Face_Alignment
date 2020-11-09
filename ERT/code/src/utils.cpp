@@ -233,7 +233,7 @@ void generate_validation_data(std::vector<Sample> &data, const Eigen::MatrixX2f 
 		data[i].scale_rotate_unnormalization = scale_rotate;
 		data[i].transform_unnormalization = transform;			
 
-		normalization(data[i].landmarks_truth_normalizaiotn, data[i].landmarks_truth, data[i].scale_rotate_normalization, data[i].transform_normalization);
+		normalization(data[i].landmarks_truth_normalization, data[i].landmarks_truth, data[i].scale_rotate_normalization, data[i].transform_normalization);
 
 		data[i].landmarks_cur_normalization = global_mean_landmarks;
 		normalization(data[i].landmarks_cur, data[i].landmarks_cur_normalization, 
@@ -279,7 +279,7 @@ void generate_train_data(std::vector<Sample> &data, const int &initialization)
 		data[i].scale_rotate_unnormalization = scale_rotate;
 		data[i].transform_unnormalization = transform;			
 
-		normalization(data[i].landmarks_truth_normalizaiotn, data[i].landmarks_truth, data[i].scale_rotate_normalization, data[i].transform_normalization);
+		normalization(data[i].landmarks_truth_normalization, data[i].landmarks_truth, data[i].scale_rotate_normalization, data[i].transform_normalization);
 	}
 
 	for(int i = 0; i < data_size_origin; ++i)
@@ -294,7 +294,7 @@ void generate_train_data(std::vector<Sample> &data, const int &initialization)
 				index = rand() % (data_size_origin);
 			}while(index == i);
 
-			data[i + j * data_size_origin].landmarks_cur_normalization = data[index].landmarks_truth_normalizaiotn;
+			data[i + j * data_size_origin].landmarks_cur_normalization = data[index].landmarks_truth_normalization;
 			normalization(data[i + j * data_size_origin].landmarks_cur, data[i + j * data_size_origin].landmarks_cur_normalization, 
 				data[i + j * data_size_origin].scale_rotate_unnormalization, data[i + j * data_size_origin].transform_unnormalization);
 			check_edge(data[i + j * data_size_origin]);

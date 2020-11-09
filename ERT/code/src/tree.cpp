@@ -12,7 +12,7 @@ Tree::Tree(const int &depth, const int &feature_number_of_node, const float &lam
 	this->_root_number = (int)std::pow(2, depth - 1) - 1;
 	this->_leaf_number = (int)std::pow(2, depth - 1);
 
-	_model.splite_model.resize(_root_number);
+	_model.split_model.resize(_root_number);
 	_model.residual_model.resize(_leaf_number);
 }
 
@@ -52,7 +52,7 @@ void Tree::generate_candidate_feature(
 	 }
 }
 
-float Tree::splite_node(
+float Tree::split_node(
 	std::vector<Sample> &data,
 	const Node& node,
 	int index,
@@ -86,12 +86,12 @@ float Tree::splite_node(
 			{
 				if(data[i].tree_index == 2 * index + 1)
 				{
-					mean_left += (data[i].landmarks_truth_normalizaiotn - data[i].landmarks_cur_normalization);
+					mean_left += (data[i].landmarks_truth_normalization - data[i].landmarks_cur_normalization);
 					++left_number;	
 				}
 				else if(data[i].tree_index == 2 * index + 2)
 				{
-					mean_right += (data[i].landmarks_truth_normalizaiotn - data[i].landmarks_cur_normalization);
+					mean_right += (data[i].landmarks_truth_normalization - data[i].landmarks_cur_normalization);
 					++right_number;
 				}
 				data[i].tree_index = index;
@@ -123,7 +123,7 @@ void Tree::train(std::vector<Sample> &data, std::vector<Sample> &validationdata,
 		
 		for(int j = 0; j < feature_number_of_node / 2; ++j)
 		{
-			float score = Tree::splite_node(
+			float score = Tree::split_node(
 				data,
 				Node(
 					candidate_landmark_index[2 * j],
@@ -148,16 +148,17 @@ void Tree::train(std::vector<Sample> &data, std::vector<Sample> &validationdata,
 			}
 		}
 		
-		_model.splite_model[i].landmark_index1 = candidate_landmark_index[index_max_score];
-		_model.splite_model[i].landmark_index2 = candidate_landmark_index[index_max_score + 1];
-		_model.splite_model[i].index1_offset = candidate_feature_offset.row(index_max_score);
-		_model.splite_model[i].index2_offset = candidate_feature_offset.row(index_max_score + 1);
-		_model.splite_model[i].threshold = threshold[index_max_score / 2];
+		_model.split_model[i] = Node(
+			candidate_landmark_index[index_max_score],
+			candidate_landmark_index[index_max_score + 1],
+			candidate_feature_offset.row(index_max_score),
+			candidate_feature_offset.row(index_max_score + 1),
+			threshold[index_max_score / 2]);
 		
-		Tree::splite_node(data, _model.splite_model[i], i, true);
-		Tree::splite_node(validationdata, _model.splite_model[i], i, true);
+		Tree::split_node(data, _model.split_model[i], i, true);
+		Tree::split_node(validationdata, _model.split_model[i], i, true);
 	}
-	int landmark_number = (int)data[0].landmarks_truth_normalizaiotn.rows();
+	int landmark_number = (int)data[0].landmarks_truth_normalization.rows();
 	for(int i = 0; i < _leaf_number; ++i)
 	{
 		_model.residual_model[i].resize(landmark_number, 2);
@@ -171,7 +172,7 @@ void Tree::train(std::vector<Sample> &data, std::vector<Sample> &validationdata,
 	for(int i = 0; i < data.size(); ++i)
 	{
 		int leaf = data[i].tree_index - _root_number;
-		_model.residual_model[leaf] += (data[i].landmarks_truth_normalizaiotn - data[i].landmarks_cur_normalization);
+		_model.residual_model[leaf] += (data[i].landmarks_truth_normalization - data[i].landmarks_cur_normalization);
 		++data_number[leaf];
 	}
 

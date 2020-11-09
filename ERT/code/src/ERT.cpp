@@ -40,7 +40,7 @@ void ERT::compute_mean_landmarks(const std::vector<Sample> &data)
 	global_mean_landmarks.setZero();
 	for(int i = 0; i < data.size() / initialization; ++i)
 	{
-		global_mean_landmarks += data[i].landmarks_truth_normalizaiotn;
+		global_mean_landmarks += data[i].landmarks_truth_normalization;
 	}
 	// global_mean_landmarks /= (data.size() / initialization);
 	global_mean_landmarks /= ((float)data.size() / (float)initialization);
@@ -138,13 +138,13 @@ void ERT::save(const std::string &path) const
 			auto& node_json = forest_json[j]["node"];
 			for(int k = 0; k < root_number; ++k)
 			{
-				node_json[k]["landmark_index"][0] = regressors[i].trees()[j].model()->splite_model[k].landmark_index1;
-				node_json[k]["landmark_index"][1] = regressors[i].trees()[j].model()->splite_model[k].landmark_index2;
-				node_json[k]["offset"][0] = regressors[i].trees()[j].model()->splite_model[k].index1_offset(0);
-				node_json[k]["offset"][1] = regressors[i].trees()[j].model()->splite_model[k].index1_offset(1);
-				node_json[k]["offset"][2] = regressors[i].trees()[j].model()->splite_model[k].index2_offset(0);
-				node_json[k]["offset"][3] = regressors[i].trees()[j].model()->splite_model[k].index2_offset(1);
-				node_json[k]["threshold"] = regressors[i].trees()[j].model()->splite_model[k].threshold;
+				node_json[k]["landmark_index"][0] = regressors[i].trees()[j].model()->split_model[k].landmark_index1;
+				node_json[k]["landmark_index"][1] = regressors[i].trees()[j].model()->split_model[k].landmark_index2;
+				node_json[k]["offset"][0] = regressors[i].trees()[j].model()->split_model[k].index1_offset(0);
+				node_json[k]["offset"][1] = regressors[i].trees()[j].model()->split_model[k].index1_offset(1);
+				node_json[k]["offset"][2] = regressors[i].trees()[j].model()->split_model[k].index2_offset(0);
+				node_json[k]["offset"][3] = regressors[i].trees()[j].model()->split_model[k].index2_offset(1);
+				node_json[k]["threshold"] = regressors[i].trees()[j].model()->split_model[k].threshold;
 			}
 
 			auto& leaves_json = forest_json[j]["leaf"];
@@ -197,7 +197,7 @@ void ERT::save_binary(const std::string& path) const
 			auto model = regressors[i].trees()[j].model();
 			for(int k = 0; k < root_number; ++k)
 			{
-				auto& node = model->splite_model[k];
+				auto& node = model->split_model[k];
 				fout.write((const char*)&node, sizeof(Node));
 			}
 
