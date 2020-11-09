@@ -347,7 +347,7 @@ float compute_error(const std::vector<Sample> &data)
 	return total_error / (float)data.size();
 }
 
-bool UnLeafNode::evaluate(
+bool Node::evaluate(
 	const cv::Mat_<uchar>& image,
 	const Eigen::MatrixX2f& current_normalized_shape,
 	const Eigen::Matrix2f& transform_mean_to_normal,

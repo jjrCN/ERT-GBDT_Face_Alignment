@@ -54,7 +54,7 @@ void Tree::generate_candidate_feature(
 
 float Tree::splite_node(
 	std::vector<Sample> &data,
-	const UnLeafNode& node,
+	const Node& node,
 	int index,
 	bool whether_change_index)
 {
@@ -125,7 +125,7 @@ void Tree::train(std::vector<Sample> &data, std::vector<Sample> &validationdata,
 		{
 			float score = Tree::splite_node(
 				data,
-				UnLeafNode(
+				Node(
 					candidate_landmark_index[2 * j],
 					candidate_landmark_index[2 * j + 1],
 					candidate_feature_offset.row(2 * j),

@@ -41,7 +41,7 @@ public:
 	int tree_index;
 };
 
-class UnLeafNode{
+class Node{
 public:
 	int landmark_index1 { 0 };
 	int landmark_index2 { 0 };
@@ -49,8 +49,8 @@ public:
 	Eigen::RowVector2f index2_offset { Eigen::RowVector2f::Zero() };
 	float threshold { 0.0f };
 
-	UnLeafNode() {}
-	UnLeafNode(
+	Node() {}
+	Node(
 		int index1,
 		int index2,
 		const Eigen::RowVector2f& offset1,
@@ -73,7 +73,7 @@ public:
 
 class TreeModel{
 public:
-	std::vector<UnLeafNode> splite_model;
+	std::vector<Node> splite_model;
 	std::vector<Eigen::MatrixX2f> residual_model;
 };
 

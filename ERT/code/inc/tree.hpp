@@ -35,7 +35,7 @@ private:
 
 	float splite_node(
 		std::vector<Sample> &data,
-		const UnLeafNode& node,
+		const Node& node,
 		int index,
 		bool whether_change_index
 		);

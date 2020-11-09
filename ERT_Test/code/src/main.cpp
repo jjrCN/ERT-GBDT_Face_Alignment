@@ -165,7 +165,7 @@ void load_model_binary(const std::string& filepath, Model& model)
 			for(int k = 0; k < root_number; ++k)
 			{
 				auto& node = tree.splite_model[k];
-				fin.read((char*)&node, sizeof(UnLeafNode));
+				fin.read((char*)&node, sizeof(Node));
 			}
 
 			for(int k = 0; k < leaf_number; ++k)

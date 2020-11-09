@@ -198,7 +198,7 @@ void ERT::save_binary(const std::string& path) const
 			for(int k = 0; k < root_number; ++k)
 			{
 				auto& node = model->splite_model[k];
-				fout.write((const char*)&node, sizeof(UnLeafNode));
+				fout.write((const char*)&node, sizeof(Node));
 			}
 
 			for(int k = 0; k < leaf_number; ++k)
