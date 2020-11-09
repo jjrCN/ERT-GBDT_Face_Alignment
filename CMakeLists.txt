@@ -43,15 +43,32 @@ ExternalProject_Add(
     UPDATE_COMMAND ""
     PATCH_COMMAND ""
     CONFIGURE_COMMAND ""
-    SOURCE_DIR "${PROJECT_BINARY_DIR}/source/eigen"
     BUILD_COMMAND ""
     INSTALL_COMMAND
         ${CMAKE_COMMAND} -E remove_directory ${DEPENDENCY_INSTALL_DIR}/include/Eigen &&
-        ${CMAKE_COMMAND} -E copy_directory ${PROJECT_BINARY_DIR}/source/eigen/Eigen
+        ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_BINARY_DIR}/dep-eigen-prefix/src/dep-eigen/Eigen
             ${DEPENDENCY_INSTALL_DIR}/include/Eigen
     TEST_COMMAND ""
     )
 set(DEPENDENCY_LIST ${DEPENDENCY_LIST} dep-eigen)
+
+ExternalProject_Add(
+    dep-clipp
+    GIT_REPOSITORY "https://github.com/muellan/clipp.git"
+    GIT_TAG "v1.2.2"
+    GIT_SHALLOW 1
+    UPDATE_COMMAND ""
+    PATCH_COMMAND ""
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND
+        ${CMAKE_COMMAND} -E make_directory ${DEPENDENCY_INSTALL_DIR}/include &&
+        ${CMAKE_COMMAND} -E copy
+            ${CMAKE_CURRENT_BINARY_DIR}/dep-clipp-prefix/src/dep-clipp/include/clipp.h
+            ${DEPENDENCY_INSTALL_DIR}/include
+    TEST_COMMAND ""
+    )
+set(DEPENDENCY_LIST ${DEPENDENCY_LIST} dep-clipp)
 
 # set(OpenCV_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/../opencv/install-debug)
 set(OpenCV_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/../opencv/install)
@@ -59,6 +76,8 @@ set(OpenCV_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/../opencv/install)
 find_package(OpenCV REQUIRED core highgui imgproc objdetect)
 message("opencv dir: ${OpenCV_INCLUDE_DIRS}")
 
+# find_package(OpenMP REQUIRED)
+# message("openmp compile option: ${OpenMP_CXX_FLAGS}")
 
 add_subdirectory(ERT)
 add_subdirectory(ERT_Train)

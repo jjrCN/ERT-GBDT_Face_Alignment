@@ -5,12 +5,15 @@ namespace fs = ghc::filesystem;
 
 namespace ert {
 
-void get_files(std::vector<std::string> &names, const std::string &path)
+void get_files(std::vector<std::string> &names, const std::string &path, const std::set<std::string>& extensions)
 {
 	for (auto p : fs::recursive_directory_iterator(path)) {
 		if (p.is_directory())
-			return;
-		names.push_back(p.path().stem());
+			continue;
+		auto pp = p.path();
+		if (extensions.find(pp.extension()) == extensions.end())
+			continue;
+		names.push_back(pp.relative_path());
 	}
 }
 
@@ -39,10 +42,8 @@ bool is_detected(const cv::Rect &box, const float &x_max, const float &x_min, co
 
 void load_samples(std::vector<Sample> &data, const std::string &path)
 {
-	std::string images_path = path + "png/";
-	std::string labels_path = path + "pts/";
 	std::vector<std::string> images_name;
-	get_files(images_name, images_path);
+	get_files(images_name, path, {".png", ".jpg", ".jpeg"});
 	int images_number = (int)images_name.size();
 	cv::Mat_<uchar> image;
 
@@ -52,10 +53,10 @@ void load_samples(std::vector<Sample> &data, const std::string &path)
 
 	for(int i = 0; i < images_number; ++i)
 	{
-		std::string image_path = images_path + images_name[i] + ".png";
+		fs::path image_path = images_name[i];
 		image = cv::imread(image_path.c_str(), 0);
 		
-		std::string label_path = labels_path + images_name[i] + ".pts";
+		auto label_path = image_path.parent_path() / (std::string(image_path.stem()) + ".pts");
 		Eigen::MatrixX2f landmark;
 		load_pts(label_path, landmark);
 
@@ -324,7 +325,7 @@ void output(const Sample &data, const std::string &path)
 		cv::circle(image, cv::Point(x, y), 3, cv::Scalar(0, 0, 0), -1);
 	}
 
-	std::string path_image = path +"/" + data.image_name + ".jpg";
+	std::string path_image = fs::path(path) / (fs::path(data.image_name).stem().string() + ".jpg");
 	cv::imwrite(path_image.c_str(), image);
 }
 

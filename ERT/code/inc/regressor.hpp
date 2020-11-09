@@ -21,7 +21,8 @@ public:
 
 	void train(std::vector<Sample> &data, std::vector<Sample> &validationdata, const Eigen::MatrixX2f &global_mean_landmarks);
 
-	const std::vector<Tree>& trees() const {return _trees;};
+	const std::vector<Tree>& trees() const { return _trees; }
+	std::vector<Tree>& trees() { return _trees; }
 
 private:
 

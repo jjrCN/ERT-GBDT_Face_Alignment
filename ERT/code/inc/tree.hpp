@@ -21,7 +21,8 @@ public:
 	int root_number() const {return _root_number;};
 	int leaf_number() const {return _leaf_number;};
 
-	const TreeModel* model() const {return &_model;};
+	const TreeModel& model() const {return _model;};
+	TreeModel& model() {return _model;};
 
 private:
 	void generate_candidate_feature(

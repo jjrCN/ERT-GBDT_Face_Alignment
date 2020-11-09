@@ -139,7 +139,7 @@ void Regressor::train(std::vector<Sample> &data, std::vector<Sample> &validation
 			residual.setZero();
 			for(int j = 0; j < multiple_trees_number; ++j)
 			{
-				residual += _trees[i * multiple_trees_number + j].model()->residual_model[result[j][k]];
+				residual += _trees[i * multiple_trees_number + j].model().residual_model[result[j][k]];
 			}
 			residual /= (float)multiple_trees_number;
 			data[k].landmarks_cur_normalization += shrinkage_factor * residual;
@@ -153,7 +153,7 @@ void Regressor::train(std::vector<Sample> &data, std::vector<Sample> &validation
 
 			for(int j = 0; j < multiple_trees_number; ++j)
 			{
-				residual += _trees[i * multiple_trees_number + j].model()->residual_model[result_vali[j][k]];
+				residual += _trees[i * multiple_trees_number + j].model().residual_model[result_vali[j][k]];
 			}
 			residual /= (float)multiple_trees_number;
 			validationdata[k].landmarks_cur_normalization += shrinkage_factor * residual;

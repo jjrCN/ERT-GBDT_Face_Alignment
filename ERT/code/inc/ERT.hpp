@@ -29,9 +29,18 @@ public:
 		const float &lambda = 0.1
 		);
 
-	void train(std::vector<Sample> &data, std::vector<Sample> &validationdata);
+	void train(std::vector<Sample> &data, std::vector<Sample> &validationdata, const std::string& output_path);
 	void save(const std::string &path) const;
 	void save_binary(const std::string& path) const;
+
+	void load(const std::string& path);
+	void load_binary(const std::string& path);
+
+	int get_root_number() const { return (int)std::pow(2, tree_depth - 1) - 1; }
+	int get_leaf_number() const { return (int)std::pow(2, tree_depth - 1); }
+	int get_landmark_number() const { return (int)global_mean_landmarks.rows(); }
+
+	void find_landmark(const cv::Mat_<uchar> image, const Eigen::Vector4f& face_rect, Eigen::MatrixX2f& landmark) const;
 
 private:
 	void compute_mean_landmarks(const std::vector<Sample> &data);

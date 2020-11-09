@@ -9,7 +9,7 @@ using namespace ert;
 ERT::ERT(const int &cascade_number, const int &tree_number, const int &multiple_trees_number, const int &tree_depth, 
 		const int &feature_number_of_node, const int &feature_pool_size, const float &shrinkage_factor, const float &padding, const int &initialization, const float &lambda)
 {
-		if(tree_number % multiple_trees_number != 0)
+	if(tree_number % multiple_trees_number != 0)
 	{
 		perror("tree_number must multiple times of multiple_trees_number.");
 		exit(1);
@@ -48,7 +48,7 @@ void ERT::compute_mean_landmarks(const std::vector<Sample> &data)
 
 }
 
-void ERT::train(std::vector<Sample> &data, std::vector<Sample> &validationdata)
+void ERT::train(std::vector<Sample> &data, std::vector<Sample> &validationdata, const std::string& output_path)
 {
 	if(data.empty())
 	{
@@ -65,13 +65,13 @@ void ERT::train(std::vector<Sample> &data, std::vector<Sample> &validationdata)
 
 		if(i == 0)
 		{
-			std::string path = "./result/train_origin_landmark";
+			fs::path path = fs::path(output_path) / "train_origin_landmark";
 			fs::remove_all(path);
 			fs::create_directories(path);
 			for(int j = 0; j < 10; ++j)
 				output(data[j], path);
 
-			path = "./result/validation_origin_landmark";
+			path = fs::path(output_path) / "validation_origin_landmark";
 			fs::remove_all(path);
 			fs::create_directories(path);
 			for(int j = 0; j < 10; ++j)
@@ -82,8 +82,8 @@ void ERT::train(std::vector<Sample> &data, std::vector<Sample> &validationdata)
 
 		std::stringstream stream;
 		stream << i + 1;
-		std::string outputpath_train = "./result/train_cascade_" + stream.str();
-		std::string outputpath_vali = "./result/validation_cascade_" + stream.str();
+		fs::path outputpath_train = fs::path(output_path) / ("train_cascade_" + stream.str());
+		fs::path outputpath_vali  = fs::path(output_path) / ("validation_cascade_" + stream.str());
 
 		fs::remove_all(outputpath_train);
 		fs::remove_all(outputpath_vali);
@@ -104,9 +104,9 @@ void ERT::train(std::vector<Sample> &data, std::vector<Sample> &validationdata)
 
 void ERT::save(const std::string &path) const
 {
-	int root_number = (int)std::pow(2, tree_depth - 1) - 1;
-	int leaf_number = (int)std::pow(2, tree_depth - 1);
-	int landmark_number = (int)global_mean_landmarks.rows();
+	int root_number = get_root_number();
+	int leaf_number = get_leaf_number();
+	int landmark_number = get_landmark_number();
 
 	json model;
 	auto& info = model["info"];
@@ -138,13 +138,13 @@ void ERT::save(const std::string &path) const
 			auto& node_json = forest_json[j]["node"];
 			for(int k = 0; k < root_number; ++k)
 			{
-				node_json[k]["landmark_index"][0] = regressors[i].trees()[j].model()->split_model[k].landmark_index1;
-				node_json[k]["landmark_index"][1] = regressors[i].trees()[j].model()->split_model[k].landmark_index2;
-				node_json[k]["offset"][0] = regressors[i].trees()[j].model()->split_model[k].index1_offset(0);
-				node_json[k]["offset"][1] = regressors[i].trees()[j].model()->split_model[k].index1_offset(1);
-				node_json[k]["offset"][2] = regressors[i].trees()[j].model()->split_model[k].index2_offset(0);
-				node_json[k]["offset"][3] = regressors[i].trees()[j].model()->split_model[k].index2_offset(1);
-				node_json[k]["threshold"] = regressors[i].trees()[j].model()->split_model[k].threshold;
+				node_json[k]["landmark_index"][0] = regressors[i].trees()[j].model().split_model[k].landmark_index1;
+				node_json[k]["landmark_index"][1] = regressors[i].trees()[j].model().split_model[k].landmark_index2;
+				node_json[k]["offset"][0] = regressors[i].trees()[j].model().split_model[k].index1_offset(0);
+				node_json[k]["offset"][1] = regressors[i].trees()[j].model().split_model[k].index1_offset(1);
+				node_json[k]["offset"][2] = regressors[i].trees()[j].model().split_model[k].index2_offset(0);
+				node_json[k]["offset"][3] = regressors[i].trees()[j].model().split_model[k].index2_offset(1);
+				node_json[k]["threshold"] = regressors[i].trees()[j].model().split_model[k].threshold;
 			}
 
 			auto& leaves_json = forest_json[j]["leaf"];
@@ -153,8 +153,8 @@ void ERT::save(const std::string &path) const
 				auto& leaf_json = leaves_json[k];
 				for(int r = 0; r < landmark_number; ++r)
 				{
-					leaf_json[2*r  ] = regressors[i].trees()[j].model()->residual_model[k](r, 0);
-					leaf_json[2*r+1] = regressors[i].trees()[j].model()->residual_model[k](r, 1);
+					leaf_json[2*r  ] = regressors[i].trees()[j].model().residual_model[k](r, 0);
+					leaf_json[2*r+1] = regressors[i].trees()[j].model().residual_model[k](r, 1);
 				}
 			}
 		}
@@ -168,9 +168,9 @@ void ERT::save(const std::string &path) const
 
 void ERT::save_binary(const std::string& path) const
 {
-	int root_number = (int)std::pow(2, tree_depth - 1) - 1;
-	int leaf_number = (int)std::pow(2, tree_depth - 1);
-	int landmark_number = (int)global_mean_landmarks.rows();
+	int root_number = get_root_number();
+	int leaf_number = get_leaf_number();
+	int landmark_number = get_landmark_number();
 
 	std::ofstream fout(path, std::ios::binary);
 
@@ -194,20 +194,222 @@ void ERT::save_binary(const std::string& path) const
 	{
 		for(int j = 0; j < tree_number; ++j)
 		{
-			auto model = regressors[i].trees()[j].model();
+			auto& model = regressors[i].trees()[j].model();
 			for(int k = 0; k < root_number; ++k)
 			{
-				auto& node = model->split_model[k];
+				auto& node = model.split_model[k];
 				fout.write((const char*)&node, sizeof(Node));
 			}
 
 			for(int k = 0; k < leaf_number; ++k)
 			{
-				auto& leaf = model->residual_model[k];
+				auto& leaf = model.residual_model[k];
 				fout.write((const char*)leaf.data(), sizeof(float) * landmark_number * 2);
 			}
 		}
 	}
 
 	fout.close();
+}
+
+void ERT::load(const std::string& path)
+{
+	std::ifstream fin(path);
+	json tree_json;
+	fin >> tree_json;
+	fin.close();
+
+	std::cout << "open model." << std::endl;
+
+	cascade_number = tree_json["info"]["cascade_number"].get<int>();
+	tree_number = tree_json["info"]["tree_number"].get<int>();
+	multiple_trees_number = tree_json["info"]["multiple_trees_number"].get<int>();
+	tree_depth = tree_json["info"]["tree_depth"].get<int>();
+	shrinkage_factor = tree_json["info"]["shrinkage_factor"].get<float>();
+
+	int root_number = get_root_number();
+	int leaf_number = get_leaf_number();
+	int landmark_number = tree_json["info"]["landmark_number"].get<int>();
+
+	global_mean_landmarks.resize(landmark_number, 2);
+	for(int i = 0; i < landmark_number; ++i)
+	{
+		global_mean_landmarks(i, 0) = tree_json["global_mean_landmark"][2*i  ].get<float>();
+		global_mean_landmarks(i, 1) = tree_json["global_mean_landmark"][2*i+1].get<float>();
+	}
+
+	regressors.resize(cascade_number);
+	for(int i = 0; i < cascade_number; ++i)
+	{
+		std::cout << i + 1 << " cascade loaded." << std::endl;
+		Regressor regressor(
+			tree_number,
+			multiple_trees_number,
+			tree_depth,
+			feature_number_of_node,
+			feature_pool_size,
+			shrinkage_factor,
+			padding,
+			lambda);
+
+		for(int j = 0; j < tree_number; ++j)
+		{
+			auto& tree = regressor.trees()[j].model();
+			tree.split_model.resize(root_number);
+			tree.residual_model.resize(leaf_number);
+
+			auto& nodes_json = tree_json["regressor"][i][j]["node"];
+			for(int k = 0; k < root_number; ++k)
+			{
+				auto& node = tree.split_model[k];
+				auto& node_json = nodes_json[k];
+				node.landmark_index1 = node_json["landmark_index"][0].get<int>();
+				node.landmark_index2 = node_json["landmark_index"][1].get<int>();
+				node.index1_offset(0) = node_json["offset"][0].get<float>();
+				node.index1_offset(1) = node_json["offset"][1].get<float>();
+				node.index2_offset(0) = node_json["offset"][2].get<float>();
+				node.index2_offset(1) = node_json["offset"][3].get<float>();
+				node.threshold = node_json["threshold"].get<float>();
+			}
+
+			auto& leaf_json = tree_json["regressor"][i][j]["leaf"];
+			for(int k = 0; k < leaf_number; ++k)
+			{
+				auto& leaf_node_data = tree.residual_model[k];
+				leaf_node_data.resize(landmark_number, 2);
+				for(int r = 0; r < landmark_number; ++r)
+				{
+					leaf_node_data(r, 0) = leaf_json[k][2*r  ].get<float>();
+					leaf_node_data(r, 1) = leaf_json[k][2*r+1].get<float>();
+				}
+			}
+		}
+		
+		regressors[i] = regressor;
+	}
+}
+
+void ERT::load_binary(const std::string& path)
+{
+	std::ifstream fin(path, std::ios::binary);
+	std::cout << "open model." << std::endl;
+
+	int landmark_number = 0;
+	fin.read((char*)&cascade_number, sizeof(int));
+	fin.read((char*)&tree_number, sizeof(int));
+	fin.read((char*)&multiple_trees_number, sizeof(int));
+	fin.read((char*)&tree_depth, sizeof(int));
+	fin.read((char*)&landmark_number, sizeof(int));
+	fin.read((char*)&feature_number_of_node, sizeof(int));
+	fin.read((char*)&feature_pool_size, sizeof(int));
+	fin.read((char*)&shrinkage_factor, sizeof(float));
+	fin.read((char*)&padding, sizeof(float));
+	fin.read((char*)&lambda, sizeof(float));
+
+	int root_number = get_root_number();
+	int leaf_number = get_leaf_number();
+
+	global_mean_landmarks.resize(landmark_number, 2);
+	fin.read((char*)global_mean_landmarks.data(), sizeof(float) * landmark_number * 2);
+
+	regressors.resize(cascade_number);
+	for(int i = 0; i < cascade_number; ++i)
+	{
+		std::cout << i + 1 << " cascade loaded." << std::endl;
+		Regressor regressor(
+			tree_number,
+			multiple_trees_number,
+			tree_depth,
+			feature_number_of_node,
+			feature_pool_size,
+			shrinkage_factor,
+			padding,
+			lambda);
+
+		for(int j = 0; j < tree_number; ++j)
+		{
+			auto& tree = regressor.trees()[j].model();
+
+			tree.split_model.resize(root_number);
+			tree.residual_model.resize(leaf_number);
+
+			for(int k = 0; k < root_number; ++k)
+			{
+				auto& node = tree.split_model[k];
+				fin.read((char*)&node, sizeof(Node));
+			}
+
+			for(int k = 0; k < leaf_number; ++k)
+			{
+				auto& leaf = tree.residual_model[k];
+				leaf.resize(landmark_number, 2);
+				fin.read((char*)leaf.data(), sizeof(float) * landmark_number * 2);
+			}
+		}
+		
+		regressors[i] = regressor;
+	}
+	fin.close();
+}
+
+void ERT::find_landmark(const cv::Mat_<uchar> image, const Eigen::Vector4f& face_rect, Eigen::MatrixX2f& landmark) const
+{
+	Eigen::MatrixX2f bbox(4, 2);
+  	Eigen::MatrixX2f bbox_normal(4, 2);
+
+	bbox(0, 0) = face_rect(0);		bbox(0, 1) = face_rect(2);
+	bbox(1, 0) = face_rect(1);		bbox(1, 1) = face_rect(2);
+	bbox(2, 0) = face_rect(0);		bbox(2, 1) = face_rect(3);
+	bbox(3, 0) = face_rect(1);		bbox(3, 1) = face_rect(3);
+	
+  	bbox_normal(0, 0) = 0; 	bbox_normal(0, 1) = 0;
+	bbox_normal(1, 0) = 1; 	bbox_normal(1, 1) = 0;
+	bbox_normal(2, 0) = 0; 	bbox_normal(2, 1) = 1;
+	bbox_normal(3, 0) = 1; 	bbox_normal(3, 1) = 1; 
+
+	Eigen::Matrix2f scale_rotate_normal_to_image;
+	Eigen::RowVector2f translation_normal_to_image;
+	Eigen::Matrix2f scale_rotate_mean_to_cur;
+
+	Eigen::MatrixX2f landmarks_cur_normalization = global_mean_landmarks;
+	compute_similarity_transform(bbox, bbox_normal, scale_rotate_normal_to_image, translation_normal_to_image);
+
+	int root_number = get_root_number();
+	int leaf_number = get_leaf_number();
+	int landmark_number = get_landmark_number();
+
+	for(int i = 0; i < cascade_number; ++i)
+	{
+		Eigen::RowVector2f translation;
+		compute_similarity_transform(landmarks_cur_normalization, global_mean_landmarks, scale_rotate_mean_to_cur, translation);
+		int times = tree_number / multiple_trees_number;
+		for(int j = 0; j < times; ++j)
+		{
+			Eigen::MatrixX2f residual(landmark_number, 2);
+			residual.setZero();
+			for(int k = 0; k < multiple_trees_number; ++k)
+			{
+				int index = 0;
+				auto& tree = regressors[i].trees()[j * multiple_trees_number + k].model();
+				for(int h = 0; h < root_number; h = index)
+				{
+					bool left_node = tree.split_model[h].evaluate(
+						image,
+						landmarks_cur_normalization,
+						scale_rotate_mean_to_cur,
+						scale_rotate_normal_to_image,
+						translation_normal_to_image
+						);
+					index = 2 * h + (left_node ? 1 : 2);
+				}
+			
+				residual += tree.residual_model[index - root_number];
+				index = 0;
+			}
+			landmarks_cur_normalization += shrinkage_factor * (residual / multiple_trees_number);
+		}
+	}
+	if (landmark.rows() != landmarks_cur_normalization.rows())
+		landmark.resize(landmarks_cur_normalization.rows(), 2);
+	normalization(landmark, landmarks_cur_normalization, scale_rotate_normal_to_image, translation_normal_to_image);
 }
