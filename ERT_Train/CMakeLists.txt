@@ -6,7 +6,7 @@ add_executable(ERT_Train ${source})
 add_dependencies(ERT_Train ERT)
 
 target_include_directories(ERT_Train PUBLIC
-    ${OpenCV_DIR}/include
+    ${OpenCV_INCLUDE_DIRS}
     ${DEPENDENCY_INCLUDE_DIR}
     ../ERT/code/inc
     )

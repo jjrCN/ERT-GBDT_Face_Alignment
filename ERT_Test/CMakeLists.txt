@@ -6,7 +6,7 @@ add_executable(ERT_Test ${source})
 add_dependencies(ERT_Test ERT)
 
 target_include_directories(ERT_Test PUBLIC
-    ${OpenCV_DIR}/include
+    ${OpenCV_INCLUDE_DIRS}
     ${DEPENDENCY_INCLUDE_DIR}
     ../ERT/code/inc
     )

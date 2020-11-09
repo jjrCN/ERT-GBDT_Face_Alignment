@@ -9,7 +9,7 @@ add_library(ERT STATIC ${source})
 add_dependencies(ERT ${DEPENDENCY_LIST})
 
 target_include_directories(ERT PUBLIC
-    ${OpenCV_DIR}/include
+    ${OpenCV_INCLUDE_DIRS}
     ${DEPENDENCY_INCLUDE_DIR}
     ./code/inc
     )

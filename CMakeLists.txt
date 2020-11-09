@@ -57,7 +57,7 @@ set(DEPENDENCY_LIST ${DEPENDENCY_LIST} dep-eigen)
 set(OpenCV_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/../opencv/install)
 
 find_package(OpenCV REQUIRED core highgui imgproc objdetect)
-message("opencv dir: ${OpenCV_DIR}/include")
+message("opencv dir: ${OpenCV_INCLUDE_DIRS}")
 
 
 add_subdirectory(ERT)
