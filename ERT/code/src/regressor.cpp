@@ -3,7 +3,7 @@
 using namespace ert;
 
 Regressor::Regressor(const int &tree_number, const int &multiple_trees_number, const int &tree_depth, 
-		const int &feature_number_of_node, const int &feature_pool_size, const float &shrinkage_factor, const float &padding, const float &lamda)
+		const int &feature_number_of_node, const int &feature_pool_size, const float &shrinkage_factor, const float &padding, const float &lambda)
 {	
 	this->tree_number = tree_number;
 	this->multiple_trees_number = multiple_trees_number;
@@ -12,7 +12,7 @@ Regressor::Regressor(const int &tree_number, const int &multiple_trees_number, c
 	this->feature_pool_size = feature_pool_size;
 	this->shrinkage_factor = shrinkage_factor;
 	this->padding = padding;
-	this->lamda = lamda;
+	this->lambda = lambda;
 
 	feature_pool.resize(feature_pool_size, 2);
 	offset.resize(feature_pool_size, 2);
@@ -20,7 +20,7 @@ Regressor::Regressor(const int &tree_number, const int &multiple_trees_number, c
 	offset.setZero();
 	landmark_index.resize(feature_pool_size);
 
-	Tree tree_template(tree_depth, feature_number_of_node, lamda);
+	Tree tree_template(tree_depth, feature_number_of_node, lambda);
 
 	for(int i = 0; i < tree_number; ++i)
 	{

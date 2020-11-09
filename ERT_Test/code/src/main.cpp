@@ -33,7 +33,7 @@ public:
 	int feature_pool_size;
 	float shrinkage_factor;
 	float padding;
-	float lamda;
+	float lambda;
 
 	int root_number;
 	int leaf_number;
@@ -134,7 +134,7 @@ void load_model_binary(const std::string& filepath, Model& model)
 	fin.read((char*)&model.feature_pool_size, sizeof(int));
 	fin.read((char*)&model.shrinkage_factor, sizeof(float));
 	fin.read((char*)&model.padding, sizeof(float));
-	fin.read((char*)&model.lamda, sizeof(float));
+	fin.read((char*)&model.lambda, sizeof(float));
 
 	model.root_number = (int)(std::pow(2, model.tree_depth - 1) - 1);
 	model.leaf_number = (int)(std::pow(2, model.tree_depth - 1));

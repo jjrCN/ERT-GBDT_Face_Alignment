@@ -84,7 +84,10 @@ Please Star it. Thank you.
   - [x] use Eigen3, just like learning code
 - [x] create a simple binary model, make it fast for loading and saving
   - a binary model size would be about x10 times smaller than a json model.
-- [ ] refactor
+- [x] refactor
   - [x] renaming and following naming convension
-  - [ ] reuse the ERT model code for training / testing
+  - [x] reuse the ERT model code for training / testing
+- [ ] find tracking method that does not have to reset normalized landmark shape with mean shape
+  - currently normalized shape is reset by global mean shape for every frame
+  - but when we use previous frame's shape, the shape become drifted rapidly. why?
 - [ ] remove opencv dependency (is it possible?)

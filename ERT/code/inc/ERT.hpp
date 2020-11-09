@@ -26,7 +26,7 @@ public:
 		const float &shrinkage_factor = 0.1,
 		const float &padding = 0.1,
 		const int &initialization = 1,
-		const float &lamda = 0.1
+		const float &lambda = 0.1
 		);
 
 	void train(std::vector<Sample> &data, std::vector<Sample> &validationdata);
@@ -48,7 +48,7 @@ private:
 	float shrinkage_factor;
 
 	int initialization;
-	float lamda;
+	float lambda;
 	
 	Eigen::MatrixX2f global_mean_landmarks;
 	std::vector<Regressor> regressors;

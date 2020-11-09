@@ -7,7 +7,7 @@ using namespace nlohmann;
 using namespace ert;
 
 ERT::ERT(const int &cascade_number, const int &tree_number, const int &multiple_trees_number, const int &tree_depth, 
-		const int &feature_number_of_node, const int &feature_pool_size, const float &shrinkage_factor, const float &padding, const int &initialization, const float &lamda)
+		const int &feature_number_of_node, const int &feature_pool_size, const float &shrinkage_factor, const float &padding, const int &initialization, const float &lambda)
 {
 		if(tree_number % multiple_trees_number != 0)
 	{
@@ -23,9 +23,9 @@ ERT::ERT(const int &cascade_number, const int &tree_number, const int &multiple_
 	this->shrinkage_factor = shrinkage_factor;
 	this->padding = padding;
 	this->initialization = initialization;
-	this->lamda = lamda;
+	this->lambda = lambda;
 
-	Regressor regressor_template(tree_number, multiple_trees_number, tree_depth, feature_number_of_node, feature_pool_size, shrinkage_factor, padding, lamda);
+	Regressor regressor_template(tree_number, multiple_trees_number, tree_depth, feature_number_of_node, feature_pool_size, shrinkage_factor, padding, lambda);
 
 	for(int i = 0; i < cascade_number; ++i)
 	{
@@ -120,7 +120,7 @@ void ERT::save(const std::string &path) const
 	info["feature_pool_size"] = feature_pool_size;
 	info["shrinkage_factor"] = shrinkage_factor;
 	info["padding"] = padding;
-	info["lamda"] = lamda;
+	info["lambda"] = lambda;
 
 	auto& gml_json = model["global_mean_landmark"];
 	for(int i = 0; i < landmark_number; ++i)
@@ -184,7 +184,7 @@ void ERT::save_binary(const std::string& path) const
 	fout.write((const char*)&feature_pool_size, sizeof(int));
 	fout.write((const char*)&shrinkage_factor, sizeof(float));
 	fout.write((const char*)&padding, sizeof(float));
-	fout.write((const char*)&lamda, sizeof(float));
+	fout.write((const char*)&lambda, sizeof(float));
 
 	// global landmark mean
 	fout.write((const char*)global_mean_landmarks.data(), sizeof(float) * landmark_number * 2);

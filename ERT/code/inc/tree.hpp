@@ -8,7 +8,7 @@ namespace ert {
 
 class Tree {
 public:
-	Tree(const int &depth = 5, const int &feature_number_of_node = 20, const float &lamda = 0.1);
+	Tree(const int &depth = 5, const int &feature_number_of_node = 20, const float &lambda = 0.1);
 
 	void train(
 		std::vector<Sample> &data,
@@ -43,7 +43,7 @@ private:
 private:
 	int depth;
 	int feature_number_of_node;
-	float lamda;
+	float lambda;
 
 	int _root_number;
 	int _leaf_number;

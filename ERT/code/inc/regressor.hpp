@@ -16,7 +16,7 @@ public:
 		const int &feature_pool_size = 400,
 		const float &shrinkage_factor = 0.1,
 		const float &padding = 0.1,
-		const float &lamda = 0.1
+		const float &lambda = 0.1
 		);
 
 	void train(std::vector<Sample> &data, std::vector<Sample> &validationdata, const Eigen::MatrixX2f &global_mean_landmarks);
@@ -40,7 +40,7 @@ private:
 
 	int tree_number;
 	int tree_depth;
-	float lamda;
+	float lambda;
 
 	std::vector<Tree> _trees;
 

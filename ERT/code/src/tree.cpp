@@ -3,11 +3,11 @@
 
 using namespace ert;
 
-Tree::Tree(const int &depth, const int &feature_number_of_node, const float &lamda)
+Tree::Tree(const int &depth, const int &feature_number_of_node, const float &lambda)
 {
 	this->depth = depth;
 	this->feature_number_of_node = feature_number_of_node;
-	this->lamda = lamda;
+	this->lambda = lambda;
 
 	this->_root_number = (int)std::pow(2, depth - 1) - 1;
 	this->_leaf_number = (int)std::pow(2, depth - 1);
@@ -36,7 +36,7 @@ void Tree::generate_candidate_feature(
 	 		_x_index = std::rand() % landmark_index.size();
 	 		_y_index = std::rand() % landmark_index.size();
 	 		distance = std::pow(feature_pool(_x_index, 0) - feature_pool(_y_index, 0), 2) + std::pow(feature_pool(_x_index, 1) - feature_pool(_y_index, 1), 2);
-	 		prob = std::exp(-distance / lamda);
+	 		prob = std::exp(-distance / lambda);
 	 		prob_threshold = std::rand() / (float)(RAND_MAX);
 	 	}while(_x_index == _y_index || prob <= prob_threshold);
 
