@@ -17,22 +17,10 @@
 #include <nlohmann/json.hpp>
 #include <chrono>
 
+#include <ERT.hpp>
+
 using namespace nlohmann;
-
-class UnLeafNode{
-public:
-	int landmark_index1;
-	int landmark_index2;
-	Eigen::RowVector2f index1_offset;
-	Eigen::RowVector2f index2_offset;
-	float threshold;
-};
-
-class TreeModel{
-public:
-	std::vector<UnLeafNode> splite_model;
-	std::vector<Eigen::MatrixX2f> residual_model;
-};
+using namespace ert;
 
 class Model {
 public:
@@ -53,111 +41,6 @@ public:
 	Eigen::MatrixX2f global_mean_landmarks;
 	std::vector<std::vector<TreeModel>> regressors;
 };
-
-void compute_scale_rotate_transform(
-	const Eigen::MatrixX2f &target,
-	const Eigen::MatrixX2f &origin,
-	Eigen::Matrix2f &scale_rotate,
-	Eigen::RowVector2f &transform)
-{
-	Eigen::RowVector2f target_centroid = target.colwise().mean();
-	Eigen::RowVector2f origin_centroid = origin.colwise().mean();
-
-	auto centered_target = target.rowwise() - target_centroid;
-	auto centered_origin = origin.rowwise() - origin_centroid;
-
-	auto target_scale = sqrtf(centered_target.squaredNorm() / (float)target.rows());
-	auto origin_scale = sqrtf(centered_origin.squaredNorm() / (float)origin.rows());
-
-	auto cov_mat = (centered_origin / origin_scale).transpose() * (centered_target / target_scale);
-	float angle = atan2f(cov_mat(0, 1) - cov_mat(1, 0), cov_mat(0, 0) + cov_mat(1, 1));
-
-	float c = (target_scale / origin_scale) * cos(angle);
-	float s = (target_scale / origin_scale) * sin(angle);
-	scale_rotate(0, 0) =  c;
-	scale_rotate(0, 1) =  s;
-	scale_rotate(1, 0) = -s;
-	scale_rotate(1, 1) =  c;
-	transform = target_centroid - origin_centroid * scale_rotate;
-
-	// int rows = (int)origin.rows();
-	// int cols = (int)origin.cols();
-
-	// Eigen::MatrixX3f origin_new(rows, 3);
-	// origin_new.block(0, 0, rows, 2) = origin;
-	// origin_new.block(0, 2, rows, 1) = Eigen::VectorXf::Ones(rows);
-
-	// auto pinv = (origin_new.transpose() * origin_new).inverse() * origin_new.transpose();
-	// auto weight = pinv * target;
-
-	// scale_rotate(0, 0) = weight(0, 0);
-	// scale_rotate(0, 1) = weight(0, 1);
-	// scale_rotate(1, 0) = weight(1, 0);
-	// scale_rotate(1, 1) = weight(1, 1);
-
-	// transform(0, 0) = weight(2, 0);
-	// transform(0, 1) = weight(2, 1);
-}
-
-void compute_scale_rotate(
-	const Eigen::MatrixX2f &target,
-	const Eigen::MatrixX2f &origin,
-	Eigen::Matrix2f &scale_rotate)
-{
-	Eigen::RowVector2f target_centroid = target.colwise().mean();
-	Eigen::RowVector2f origin_centroid = origin.colwise().mean();
-
-	auto centered_target = target.rowwise() - target_centroid;
-	auto centered_origin = origin.rowwise() - origin_centroid;
-
-	auto target_scale = sqrtf(centered_target.squaredNorm() / (float)target.rows());
-	auto origin_scale = sqrtf(centered_origin.squaredNorm() / (float)origin.rows());
-
-	auto cov_mat = (centered_origin / origin_scale).transpose() * (centered_target / target_scale);
-	float angle = atan2f(cov_mat(0, 1) - cov_mat(1, 0), cov_mat(0, 0) + cov_mat(1, 1));
-
-	float c = (target_scale / origin_scale) * cos(angle);
-	float s = (target_scale / origin_scale) * sin(angle);
-	scale_rotate(0, 0) =  c;
-	scale_rotate(0, 1) =  s;
-	scale_rotate(1, 0) = -s;
-	scale_rotate(1, 1) =  c;
-	// transform = target_centroid - origin_centroid * scale_rotate;
-
-	// int rows = (int)origin.rows();
-	// int cols = (int)origin.cols();
-
-	// Eigen::MatrixX3f origin_new(rows, 3);
-	// origin_new.block(0, 0, rows, 2) = origin;
-	// origin_new.block(0, 2, rows, 1) = Eigen::VectorXf::Ones(rows);
-
-	// auto pinv = (origin_new.transpose() * origin_new).inverse() * origin_new.transpose();
-	// auto weight = pinv * target;
-
-	// scale_rotate(0, 0) = weight(0, 0);
-	// scale_rotate(0, 1) = weight(0, 1);
-	// scale_rotate(1, 0) = weight(1, 0);
-	// scale_rotate(1, 1) = weight(1, 1);
-}
-
-void normalization(cv::Mat_<float> &target, const cv::Mat_<float> &origin, const cv::Mat_<float> &scale_rotate, const cv::Mat_<float> &transform)
-{
-	cv::Mat_<float> ones = cv::Mat_<float>::ones(origin.rows, 1);
-	cv::Mat_<float> temp1;
-	cv::hconcat(origin, ones, temp1);
-	cv::Mat_<float> temp2;
-	cv::vconcat(scale_rotate, transform, temp2);
-	target = temp1 * temp2;
-}
-
-void normalization2(
-	Eigen::MatrixX2f &target,
-	const Eigen::MatrixX2f &origin,
-	const Eigen::Matrix2f &scale_rotate,
-	const Eigen::RowVector2f &transform)
-{
-	target = (origin * scale_rotate).rowwise() + transform;
-}
 
 void load_model_json(const std::string& filepath, Model& model)
 {
@@ -405,7 +288,9 @@ int main(int argc, char* argv[])
 		// 	GTBox_Rect.y = (int)(bbCenter(1) - paddedLength * 0.5f - paddedLength * 0.12f);
 		// 	GTBox_Rect.width = (int)paddedLength;
 		// 	GTBox_Rect.height = (int)paddedLength;
-		// 	compute_scale_rotate_transform(landmarks_cur, global_mean_landmarks, scale_rotate_normalization_to_truth, transform_normalization_to_truth);
+		// 	compute_similarity_transform(landmarks_cur, global_mean_landmarks, scale_rotate_normalization_to_truth, transform_normalization_to_truth);
+		// 	// landmarks_cur_normalization = global_mean_landmarks;
+		// 	// compute_similarity_transform(GTBox, GTBox_normalization, scale_rotate_normalization_to_truth, transform_normalization_to_truth);
 		// 	face_found = true;
 		// }
 		time_detect_end = clock();
@@ -421,13 +306,14 @@ int main(int argc, char* argv[])
 			GTBox(3, 1) = (float)(GTBox_Rect.y + GTBox_Rect.height);
 			landmarks_cur_normalization = global_mean_landmarks;
 			time_rotate_trainsform_begin = clock();
-			compute_scale_rotate_transform(GTBox, GTBox_normalization, scale_rotate_normalization_to_truth, transform_normalization_to_truth);
+			compute_similarity_transform(GTBox, GTBox_normalization, scale_rotate_normalization_to_truth, transform_normalization_to_truth);
 			time_rotate_trainsform_end = clock();
 			time_begin = clock();
 			for(int i = 0; i < cascade_number; ++i)
 			{
 				time_one_cascade_begin = clock();
-				compute_scale_rotate(landmarks_cur_normalization, global_mean_landmarks, scale_rotate_from_mean_to_cur);
+				Eigen::RowVector2f translation;
+				compute_similarity_transform(landmarks_cur_normalization, global_mean_landmarks, scale_rotate_from_mean_to_cur, translation);
 				int times = tree_number / multiple_trees_number;
 				for(int j = 0; j < times; ++j)
 				{
@@ -480,7 +366,7 @@ int main(int argc, char* argv[])
 				time_one_cascade_end = clock();
 			}
 			normalization_begin = clock();
-			normalization2(landmarks_cur, landmarks_cur_normalization, scale_rotate_normalization_to_truth, transform_normalization_to_truth);
+			normalization(landmarks_cur, landmarks_cur_normalization, scale_rotate_normalization_to_truth, transform_normalization_to_truth);
 			normalization_end = clock();
 			time_end = clock();
 
