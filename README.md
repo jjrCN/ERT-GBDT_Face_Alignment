@@ -84,5 +84,7 @@ Please Star it. Thank you.
   - [x] use Eigen3, just like learning code
 - [x] create a simple binary model, make it fast for loading and saving
   - a binary model size would be about x10 times smaller than a json model.
-- [ ] 
+- [ ] refactor
+  - [x] renaming and following naming convension
+  - [ ] reuse the ERT model code for training / testing
 - [ ] remove opencv dependency (is it possible?)

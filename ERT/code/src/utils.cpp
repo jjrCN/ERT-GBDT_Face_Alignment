@@ -347,4 +347,34 @@ float compute_error(const std::vector<Sample> &data)
 	return total_error / (float)data.size();
 }
 
+bool UnLeafNode::evaluate(
+	const cv::Mat_<uchar>& image,
+	const Eigen::MatrixX2f& current_normalized_shape,
+	const Eigen::Matrix2f& transform_mean_to_normal,
+	const Eigen::Matrix2f& transform_normal_to_image,
+	const Eigen::RowVector2f& translation_normal_to_image
+	) const
+{
+	auto u_cur = current_normalized_shape.row(landmark_index1);
+	auto v_cur = current_normalized_shape.row(landmark_index2);
+
+	auto u_data = u_cur + index1_offset * transform_mean_to_normal;
+	auto v_data = v_cur + index2_offset * transform_mean_to_normal;
+
+	auto u_data_image = u_data * transform_normal_to_image + translation_normal_to_image;
+	auto v_data_image = v_data * transform_normal_to_image + translation_normal_to_image;
+
+	int u_value = 0;
+	int v_value = 0;
+	if (u_data_image(0) >= 0 && u_data_image(0) < image.cols &&
+		u_data_image(1) >= 0 && u_data_image(1) < image.rows)
+		u_value = image.at<uchar>((int)u_data_image(1), (int)u_data_image(0));
+
+	if (v_data_image(0) >= 0 && v_data_image(0) < image.cols &&
+		v_data_image(1) >= 0 && v_data_image(1) < image.rows)
+		v_value = image.at<uchar>((int)v_data_image(1), (int)v_data_image(0));
+
+	return (u_value - v_value) > threshold;
+}
+
 } // namespace ert

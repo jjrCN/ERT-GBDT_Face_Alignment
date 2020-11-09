@@ -219,14 +219,6 @@ int main(int argc, char* argv[])
 	Eigen::MatrixX2f landmarks_cur_normalization = global_mean_landmarks;
 	Eigen::MatrixX2f landmarks_cur(landmark_number, 2);
 	landmarks_cur.setZero();
-	Eigen::RowVector2f u_cur;
-	Eigen::RowVector2f v_cur;
-	Eigen::RowVector2f u_data;
-	Eigen::RowVector2f v_data;
-	Eigen::RowVector2f u_data_unnormalization;
-	Eigen::RowVector2f v_data_unnormalization;
-	int u_index, v_index;
-	int u_value, v_value;
 	int index = 0;
 
 	std::string haar_feature = "./facedetection/haarcascade_frontalface_alt2.xml";
@@ -326,34 +318,14 @@ int main(int argc, char* argv[])
 						for(int h = 0; h < root_number; h = index)
 						{
 							splite_begin = clock();
-							u_index = tree.splite_model[h].landmark_index1;
-							v_index = tree.splite_model[h].landmark_index2;
-							u_cur = landmarks_cur_normalization.row(u_index);
-							v_cur = landmarks_cur_normalization.row(v_index);
-							u_data = u_cur + tree.splite_model[h].index1_offset * scale_rotate_from_mean_to_cur;
-							v_data = v_cur + tree.splite_model[h].index2_offset * scale_rotate_from_mean_to_cur;
-							small_nor_begin = clock();
-
-							u_data_unnormalization = u_data * scale_rotate_normalization_to_truth + transform_normalization_to_truth;
-							v_data_unnormalization = v_data * scale_rotate_normalization_to_truth + transform_normalization_to_truth;
-
-							small_nor_end = clock();
-							if(u_data_unnormalization(0) < 0 || u_data_unnormalization(0) >= image.cols || 
-								u_data_unnormalization(1) < 0 || u_data_unnormalization(1) >= image.rows)
-								u_value = 0;
-							else
-								u_value = image.at<uchar>((int)u_data_unnormalization(1), (int)u_data_unnormalization(0));
-
-							if(v_data_unnormalization(0) < 0 || v_data_unnormalization(0) >= image.cols || 
-								v_data_unnormalization(1) < 0 || v_data_unnormalization(1) >= image.rows)
-								v_value = 0;
-							else
-								v_value = image.at<uchar>((int)v_data_unnormalization(1), (int)v_data_unnormalization(0));
-
-							if(u_value - v_value > tree.splite_model[h].threshold)
-								index = 2 * h + 1;
-							else
-								index = 2 * h + 2;
+							bool left_node = tree.splite_model[h].evaluate(
+								image,
+								landmarks_cur_normalization,
+								scale_rotate_from_mean_to_cur,
+								scale_rotate_normalization_to_truth,
+								transform_normalization_to_truth
+								);
+							index = 2 * h + (left_node ? 1 : 2);
 							splite_end = clock();
 						}
 					

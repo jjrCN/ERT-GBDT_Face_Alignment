@@ -43,11 +43,32 @@ public:
 
 class UnLeafNode{
 public:
-	int landmark_index1;
-	int landmark_index2;
-	Eigen::RowVector2f index1_offset;
-	Eigen::RowVector2f index2_offset;
-	float threshold;
+	int landmark_index1 { 0 };
+	int landmark_index2 { 0 };
+	Eigen::RowVector2f index1_offset { Eigen::RowVector2f::Zero() };
+	Eigen::RowVector2f index2_offset { Eigen::RowVector2f::Zero() };
+	float threshold { 0.0f };
+
+	UnLeafNode() {}
+	UnLeafNode(
+		int index1,
+		int index2,
+		const Eigen::RowVector2f& offset1,
+		const Eigen::RowVector2f& offset2,
+		float _threshold)
+	: landmark_index1(index1)
+	, landmark_index2(index2)
+	, index1_offset(offset1)
+	, index2_offset(offset2)
+	, threshold(_threshold) {}
+
+	bool evaluate(
+		const cv::Mat_<uchar>& image,
+		const Eigen::MatrixX2f& current_normalized_shape,
+		const Eigen::Matrix2f& transform_mean_to_normal,
+		const Eigen::Matrix2f& transform_normal_to_image,
+		const Eigen::RowVector2f& translation_normal_to_image
+		) const;
 };
 
 class TreeModel{

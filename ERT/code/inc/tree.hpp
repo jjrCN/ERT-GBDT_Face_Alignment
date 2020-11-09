@@ -35,10 +35,8 @@ private:
 
 	float splite_node(
 		std::vector<Sample> &data,
-		const Eigen::RowVector2f &u,
-		const Eigen::RowVector2f &v, 
-		int u_index, int v_index,
-		float threshold, int index,
+		const UnLeafNode& node,
+		int index,
 		bool whether_change_index
 		);
 
