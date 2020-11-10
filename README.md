@@ -46,3 +46,64 @@ If you have trained an xml.model, you can use it with the ERT_Test code. What is
 
 Enjoy it ~~
 Please Star it. Thank you.
+
+### additional change note by Rinthel Kwon
+
+- Add a root `CMakeLists.txt` as a workspace
+- Make the project platform-independency
+  - Use the [gulrak's c++ file system library](https://github.com/gulrak/filesystem)
+    instead of the linux file system library, in order to make it platform-independent
+  - Use the [nlohmann's modern json library](https://github.com/nlohmann/json)
+    instead of the boost library for saving and loading a trained model,
+    in order to remove a big 'boost' dependency
+  - Now the project can be built not only on Windows, but also macOS machine
+- Use the cmake's `ExternalProject_Add()` command to automatically build the dependencies above
+- Optimize code by using Eigen3, which can be accelerated by SIMD and use compile-time sized array,
+  instead of cv::Mat, which only supports dynamic-sized array
+  - This helps unnecessary memory allocation and deallocation processes during the learning
+  - In my experience, the learning speed seems to be about x20 times faster than the original code
+    when using my macOS machine
+- Load and save the compact binary model
+- Refactor code that can be used in both of learning and evaluating
+
+##### how to build
+
+> `$ cmake -H. -Bbuild`
+> `$ cmake --build build`
+
+##### how to run
+
+- Download face alignment training data from ibug (please refer the link above) and unzip files to `dataset/lfpw` or somewhere
+- Run the training executable. The trained model files would be generated in `./result/model` by default.
+```bash
+$ ERT_Train -i ./dataset/lfpw
+```
+- Run the testing executable for webcam input
+```bash
+$ ERT_Test
+```
+- If you don't have a webcam, you can also set an image file as an input
+```bash
+$ ERT_Test -i ./dataset/lfpw/testset/image_0001.png
+```
+
+##### to-do list
+
+- [x] generate image and landmark file list without using subdirectory
+- [x] utilize command line arguments to receive learning parameter
+- [x] optimize the learning code for fast learning 
+  - [x] use Eigen3 instead of cv::Mat for acceleration
+- [x] test a learnt model
+- [x] load a learnt model saved by a json format
+- [x] optimize test code
+  - [x] use Eigen3, just like learning code
+- [x] create a simple binary model, make it fast for loading and saving
+  - a binary model size would be about x10 times smaller than a json model.
+- [x] refactor
+  - [x] renaming and following naming convension
+  - [x] reuse the ERT model code for training / testing
+- [ ] use [another face detection model](https://github.com/ShiqiYu/libfacedetection.git)
+- [ ] find tracking method that does not have to reset normalized landmark shape with mean shape
+  - currently normalized shape is reset by global mean shape for every frame
+  - but when we use previous frame's shape, the shape become drifted rapidly. why?
+- [ ] remove opencv dependency (is it possible?)
