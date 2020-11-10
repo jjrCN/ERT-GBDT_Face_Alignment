@@ -77,7 +77,7 @@ public:
 	std::vector<Eigen::MatrixX2f> residual_model;
 };
 
-void load_samples(std::vector<Sample> &data, const std::string &path);
+void load_samples(std::vector<Sample> &data, const std::string &path, const std::string& face_detector_path);
 
 void load_pts(const std::string& filename, Eigen::MatrixX2f& points);
 

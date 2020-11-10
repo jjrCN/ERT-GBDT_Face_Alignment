@@ -40,16 +40,15 @@ bool is_detected(const cv::Rect &box, const float &x_max, const float &x_min, co
 	return true;
 }
 
-void load_samples(std::vector<Sample> &data, const std::string &path)
+void load_samples(std::vector<Sample> &data, const std::string &path, const std::string& face_detector_path)
 {
 	std::vector<std::string> images_name;
 	get_files(images_name, path, {".png", ".jpg", ".jpeg"});
 	int images_number = (int)images_name.size();
 	cv::Mat_<uchar> image;
 
-	std::string haar_feature = "./facedetection/haarcascade_frontalface_alt2.xml";
 	cv::CascadeClassifier haar_cascade;
-	haar_cascade.load(haar_feature);
+	haar_cascade.load(face_detector_path);
 
 	for(int i = 0; i < images_number; ++i)
 	{

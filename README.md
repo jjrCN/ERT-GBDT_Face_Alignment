@@ -71,6 +71,22 @@ Please Star it. Thank you.
 > `$ cmake -H. -Bbuild`
 > `$ cmake --build build`
 
+##### how to run
+
+- Download face alignment training data from ibug (please refer the link above) and unzip files to `dataset/lfpw` or somewhere
+- Run the training executable. The trained model files would be generated in `./result/model` by default.
+```bash
+$ ERT_Train -i ./dataset/lfpw
+```
+- Run the testing executable for webcam input
+```bash
+$ ERT_Test
+```
+- If you don't have a webcam, you can also set an image file as an input
+```bash
+$ ERT_Test -i ./dataset/lfpw/testset/image_0001.png
+```
+
 ##### to-do list
 
 - [x] generate image and landmark file list without using subdirectory

@@ -29,11 +29,14 @@ int main(int argc, char** argv)
     std::string train_data_directory;
 	std::string validation_data_directory;
     std::string output_directory = "./result";
+	std::string face_detector_path = "./facedetection/haarcascade_frontalface_alt2.xml";
+
     auto cli = (
         (clipp::required("-i", "--input") & clipp::value("input training data directory").set(train_data_directory)),
         (clipp::option("-o", "--output") & clipp::value("output directory").set(output_directory)),
         (clipp::option("-v", "--validation") & clipp::value("input validation data directory").set(validation_data_directory)),
         clipp::option("-h", "--help").set(help, true),
+		(clipp::option("-f", "--face-detector") & clipp::value("face detector xml path").set(face_detector_path)),
 		(clipp::option("-c", "--cascade") & clipp::value("cascade count").set(cascade_number)),
 		(clipp::option("-t", "--tree") & clipp::value("tree count").set(tree_number)),
 		(clipp::option("-m", "--multiple-tree") & clipp::value("multiple tree count").set(multiple_trees_number)),
@@ -59,7 +62,7 @@ int main(int argc, char** argv)
 	std::vector<Sample> train_data, validation_data;
 	if (validation_data_directory.empty()) {
 		std::vector<Sample> all_data;
-		load_samples(all_data, train_data_directory);
+		load_samples(all_data, train_data_directory, face_detector_path);
 		std::set<int> validation_data_indices;
 		int validation_data_count = (int)all_data.size() / 10;
 		while (validation_data_indices.size() < validation_data_count) {
@@ -77,8 +80,8 @@ int main(int argc, char** argv)
 		std::cout << validation_data.size() << " images for validation" << std::endl;
 	}
 	else {
-		load_samples(train_data, train_data_directory);
-		load_samples(validation_data, validation_data_directory);
+		load_samples(train_data, train_data_directory, face_detector_path);
+		load_samples(validation_data, validation_data_directory, face_detector_path);
 	}
 
 //============data preprocessing==============//

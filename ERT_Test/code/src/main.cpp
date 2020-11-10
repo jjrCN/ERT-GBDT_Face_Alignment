@@ -27,8 +27,12 @@ int main(int argc, char* argv[])
 {
 	bool help = false;
 	std::string input_filename;
+	std::string face_detector_path = "./facedetection/haarcascade_frontalface_alt2.xml";
+	std::string model_path = "./result/model/ERT.bin";
     auto cli = (
         clipp::option("-h", "--help").set(help, true),
+		(clipp::option("-f", "--face-detector") & clipp::value("face detector xml path").set(face_detector_path)),
+		(clipp::option("-m", "--model") & clipp::value("model path").set(model_path)),
         (clipp::option("-i", "--input") & clipp::value("input image filename").set(input_filename))
     );
 
@@ -40,11 +44,10 @@ int main(int argc, char* argv[])
 
 	// Model model;
 	ERT ert;
-	ert.load_binary("./result/model/ERT.bin");
+	ert.load_binary(model_path);
 
-	std::string haar_feature = "./facedetection/haarcascade_frontalface_alt2.xml";
 	cv::CascadeClassifier haar_cascade;
-	haar_cascade.load(haar_feature);
+	haar_cascade.load(face_detector_path);
 	std::cout << "load face detector completed." << std::endl;
 
 	auto convert_cv_rect = [](const cv::Rect& rect) {
