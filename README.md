@@ -68,8 +68,10 @@ Please Star it. Thank you.
 
 ##### how to build
 
-> `$ cmake -H. -Bbuild`
-> `$ cmake --build build`
+```bash
+$ cmake -H. -Bbuild
+$ cmake --build build
+```
 
 ##### how to run
 
