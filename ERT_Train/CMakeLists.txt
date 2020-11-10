@@ -15,3 +15,5 @@ target_link_libraries(ERT_Train
     ${OpenCV_LIBS}
     ERT
     )
+
+# target_compile_options(ERT_Train PRIVATE ${OpenMP_CXX_FLAGS})

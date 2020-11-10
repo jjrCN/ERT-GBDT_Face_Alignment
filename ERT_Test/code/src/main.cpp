@@ -84,30 +84,32 @@ int main(int argc, char* argv[])
 
 		exit(0);
 	}
-
-	cv::VideoCapture cap(0);
-  	if(!cap.isOpened())
- 	{
-    	std::cout << "Video open failed. please check your video equitment." << std::endl;
-    	exit(0);
-  	}
-  	std::cout << "open video." << std::endl;
-  	int m = 1;
-  	while(m)
-  	{
-		cv::Mat colorImage;
-		cv::Mat_<uchar> image;
-  		cap >> colorImage;
-		cv::cvtColor(colorImage, image, cv::COLOR_BGR2GRAY);
-
-  		std::vector<cv::Rect> faces_temp;
-		haar_cascade.detectMultiScale(image, faces_temp, 1.1, 2, 0, cv::Size(30, 30));
-		if (!faces_temp.empty()) {
-			ert.find_landmark(image, convert_cv_rect(faces_temp[0]), landmark);
-			draw_landmark_rect(colorImage, faces_temp[0], landmark);
+	else {
+		std::cout << "An input file is not specified. Try to open video input..." << std::endl;
+		cv::VideoCapture cap(0);
+		if(!cap.isOpened())
+		{
+			std::cout << "Video open failed. please check your video equitment." << std::endl;
+			exit(0);
 		}
+		std::cout << "open video." << std::endl;
+		int m = 1;
+		while(m)
+		{
+			cv::Mat colorImage;
+			cv::Mat_<uchar> image;
+			cap >> colorImage;
+			cv::cvtColor(colorImage, image, cv::COLOR_BGR2GRAY);
 
-		cv::imshow("face", colorImage);
-	   	cv::waitKey(1);
-  	}
+			std::vector<cv::Rect> faces_temp;
+			haar_cascade.detectMultiScale(image, faces_temp, 1.1, 2, 0, cv::Size(30, 30));
+			if (!faces_temp.empty()) {
+				ert.find_landmark(image, convert_cv_rect(faces_temp[0]), landmark);
+				draw_landmark_rect(colorImage, faces_temp[0], landmark);
+			}
+
+			cv::imshow("face", colorImage);
+			cv::waitKey(1);
+		}
+	}
 }
