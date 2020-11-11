@@ -50,13 +50,15 @@ Please Star it. Thank you.
 ### additional change note by Rinthel Kwon
 
 - Add a root `CMakeLists.txt` as a workspace
+  - You can build the whole project at once
 - Make the project platform-independency
   - Use the [gulrak's c++ file system library](https://github.com/gulrak/filesystem)
     instead of the linux file system library, in order to make it platform-independent
   - Use the [nlohmann's modern json library](https://github.com/nlohmann/json)
     instead of the boost library for saving and loading a trained model,
     in order to remove a big 'boost' dependency
-  - Now the project can be built not only on Windows, but also macOS machine
+  - Now the project can be built not only on Windows, but also on macOS machine
+    - Note that I didn't test on Linux, since I don't have it, but it should be without many modification.
 - Use the cmake's `ExternalProject_Add()` command to automatically build the dependencies above
 - Optimize code by using Eigen3, which can be accelerated by SIMD and use compile-time sized array,
   instead of cv::Mat, which only supports dynamic-sized array
@@ -64,7 +66,7 @@ Please Star it. Thank you.
   - In my experience, the learning speed seems to be about x20 times faster than the original code
     when using my macOS machine
 - Load and save the compact binary model
-- Refactor code that can be used in both of learning and evaluating
+- Refactor code in order to reuse the same code for both of training and testing
 
 ##### how to build
 
@@ -73,7 +75,7 @@ $ cmake -H. -Bbuild
 $ cmake --build build
 ```
 
-##### how to run
+##### how to execute
 
 - Download face alignment training data from ibug (please refer the link above) and unzip files to `dataset/lfpw` or somewhere
 - Run the training executable. The trained model files would be generated in `./result/model` by default.
@@ -84,7 +86,7 @@ $ ERT_Train -i ./dataset/lfpw
 ```bash
 $ ERT_Test
 ```
-- If you don't have a webcam, you can also set an image file as an input
+- If you don't have a webcam, you can set and test an image file as an input
 ```bash
 $ ERT_Test -i ./dataset/lfpw/testset/image_0001.png
 ```
@@ -95,6 +97,9 @@ $ ERT_Test -i ./dataset/lfpw/testset/image_0001.png
 - [x] utilize command line arguments to receive learning parameter
 - [x] optimize the learning code for fast learning 
   - [x] use Eigen3 instead of cv::Mat for acceleration
+  - [ ] use multthreads to learn tree
+    - idea 1: use multithreads for evaluating each feature candidate
+    - idea 2: use multithreads for evaluating weak regressor function for whole data
 - [x] test a learnt model
 - [x] load a learnt model saved by a json format
 - [x] optimize test code
