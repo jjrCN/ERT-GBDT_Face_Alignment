@@ -240,10 +240,12 @@ void generate_train_data(std::vector<Sample> &data, const int &initialization)
 		data[i].scale_rotate_normalization = scale_rotate;
 		data[i].transform_normalization = transform;
 
-		compute_similarity_transform(origin, target, scale_rotate, transform);
-		
-		data[i].scale_rotate_unnormalization = scale_rotate;
-		data[i].transform_unnormalization = transform;			
+		data[i].scale_rotate_unnormalization = scale_rotate.inverse();
+		data[i].transform_unnormalization = - transform * scale_rotate.inverse();
+
+		// compute_similarity_transform(origin, target, scale_rotate, transform);
+		// data[i].scale_rotate_unnormalization = scale_rotate;
+		// data[i].transform_unnormalization = transform;			
 
 		normalization(data[i].landmarks_truth_normalization, data[i].landmarks_truth, data[i].scale_rotate_normalization, data[i].transform_normalization);
 	}
@@ -252,18 +254,19 @@ void generate_train_data(std::vector<Sample> &data, const int &initialization)
 	{
 		for(int j = 0; j < initialization; ++j)
 		{
+			auto& train_data = data[i + j * data_size_origin];
 			if(j != 0)
-				data[i + j * data_size_origin] = data[i];
+				train_data = data[i];
 
 			int index = 0;
-			do{
+			do {
 				index = rand() % (data_size_origin);
-			}while(index == i);
+			} while (index == i);
 
-			data[i + j * data_size_origin].landmarks_cur_normalization = data[index].landmarks_truth_normalization;
-			normalization(data[i + j * data_size_origin].landmarks_cur, data[i + j * data_size_origin].landmarks_cur_normalization, 
-				data[i + j * data_size_origin].scale_rotate_unnormalization, data[i + j * data_size_origin].transform_unnormalization);
-			check_edge(data[i + j * data_size_origin]);
+			train_data.landmarks_cur_normalization = data[index].landmarks_truth_normalization;
+			normalization(train_data.landmarks_cur, train_data.landmarks_cur_normalization, 
+				train_data.scale_rotate_unnormalization, train_data.transform_unnormalization);
+			check_edge(train_data);
 
 			std::stringstream stream;
 			stream << i + j * data_size_origin;
@@ -321,14 +324,14 @@ bool Node::evaluate(
 	const Eigen::RowVector2f& translation_normal_to_image
 	) const
 {
-	auto u_cur = current_normalized_shape.row(landmark_index1);
-	auto v_cur = current_normalized_shape.row(landmark_index2);
+	Eigen::RowVector2f u_cur = current_normalized_shape.row(landmark_index1);
+	Eigen::RowVector2f v_cur = current_normalized_shape.row(landmark_index2);
 
-	auto u_data = u_cur + index1_offset * transform_mean_to_normal;
-	auto v_data = v_cur + index2_offset * transform_mean_to_normal;
+	Eigen::RowVector2f u_data = u_cur + index1_offset * transform_mean_to_normal;
+	Eigen::RowVector2f v_data = v_cur + index2_offset * transform_mean_to_normal;
 
-	auto u_data_image = u_data * transform_normal_to_image + translation_normal_to_image;
-	auto v_data_image = v_data * transform_normal_to_image + translation_normal_to_image;
+	Eigen::RowVector2f u_data_image = (u_data * transform_normal_to_image + translation_normal_to_image);
+	Eigen::RowVector2f v_data_image = (v_data * transform_normal_to_image + translation_normal_to_image);
 
 	int u_value = 0;
 	int v_value = 0;

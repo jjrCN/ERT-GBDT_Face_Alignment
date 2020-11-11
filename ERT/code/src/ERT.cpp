@@ -413,3 +413,52 @@ void ERT::find_landmark(const cv::Mat_<uchar> image, const Eigen::Vector4f& face
 		landmark.resize(landmarks_cur_normalization.rows(), 2);
 	normalization(landmark, landmarks_cur_normalization, scale_rotate_normal_to_image, translation_normal_to_image);
 }
+
+void ERT::find_landmark(const cv::Mat_<uchar> image, Eigen::MatrixX2f& landmark) const
+{
+	Eigen::Matrix2f scale_rotate_normal_to_image;
+	Eigen::RowVector2f translation_normal_to_image;
+	Eigen::Matrix2f scale_rotate_mean_to_cur;
+
+	Eigen::MatrixX2f landmarks_cur_normalization = global_mean_landmarks;
+	compute_similarity_transform(landmark, global_mean_landmarks, scale_rotate_normal_to_image, translation_normal_to_image);
+
+	int root_number = get_root_number();
+	int leaf_number = get_leaf_number();
+	int landmark_number = get_landmark_number();
+
+	for(int i = 0; i < cascade_number; ++i)
+	{
+		Eigen::RowVector2f translation;
+		compute_similarity_transform(landmarks_cur_normalization, global_mean_landmarks, scale_rotate_mean_to_cur, translation);
+		int times = tree_number / multiple_trees_number;
+		for(int j = 0; j < times; ++j)
+		{
+			Eigen::MatrixX2f residual(landmark_number, 2);
+			residual.setZero();
+			for(int k = 0; k < multiple_trees_number; ++k)
+			{
+				int index = 0;
+				auto& tree = regressors[i].trees()[j * multiple_trees_number + k].model();
+				for(int h = 0; h < root_number; h = index)
+				{
+					bool left_node = tree.split_model[h].evaluate(
+						image,
+						landmarks_cur_normalization,
+						scale_rotate_mean_to_cur,
+						scale_rotate_normal_to_image,
+						translation_normal_to_image
+						);
+					index = 2 * h + (left_node ? 1 : 2);
+				}
+			
+				residual += tree.residual_model[index - root_number];
+				index = 0;
+			}
+			landmarks_cur_normalization += shrinkage_factor * (residual / multiple_trees_number);
+		}
+	}
+	if (landmark.rows() != landmarks_cur_normalization.rows())
+		landmark.resize(landmarks_cur_normalization.rows(), 2);
+	normalization(landmark, landmarks_cur_normalization, scale_rotate_normal_to_image, translation_normal_to_image);
+}

@@ -41,6 +41,7 @@ public:
 	int get_landmark_number() const { return (int)global_mean_landmarks.rows(); }
 
 	void find_landmark(const cv::Mat_<uchar> image, const Eigen::Vector4f& face_rect, Eigen::MatrixX2f& landmark) const;
+	void find_landmark(const cv::Mat_<uchar> image, Eigen::MatrixX2f& landmark) const;
 
 private:
 	void compute_mean_landmarks(const std::vector<Sample> &data);

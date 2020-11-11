@@ -44,35 +44,25 @@ void Regressor::generate_feature_pool(const Eigen::MatrixX2f &global_mean_landma
 {
 	Eigen::RowVector2f bbMin = global_mean_landmarks.colwise().minCoeff() - Eigen::RowVector2f(padding, padding);
 	Eigen::RowVector2f bbMax = global_mean_landmarks.colwise().maxCoeff() + Eigen::RowVector2f(padding, padding);
+	auto bbSize = bbMax - bbMin;
 
 	for(int i = 0; i < feature_pool_size; ++i)
 	{
-		feature_pool(i, 0) = (std::rand() / (float)(RAND_MAX)) * (bbMax(0) - bbMin(0)) + bbMin(0);
-		feature_pool(i, 1) = (std::rand() / (float)(RAND_MAX)) * (bbMax(1) - bbMin(1)) + bbMin(1);
+		feature_pool.row(i) = ((Eigen::RowVector2f::Random() + Eigen::RowVector2f::Ones()) * 0.5f).cwiseProduct(bbSize) + bbMin;
 
-		float min_distance;
-		float distance;
-		int index;
+		float min_distance = 1.0e20f;
+		int index = -1;
 		for(int j = 0; j < global_mean_landmarks.rows(); ++j)
 		{	
-			distance = std::pow((feature_pool(i, 0) - global_mean_landmarks(j, 0)), 2) + std::pow((feature_pool(i, 1) - global_mean_landmarks(j, 1)), 2);
-			if(j == 0)
+			float distance = (feature_pool.row(i) - global_mean_landmarks.row(j)).squaredNorm();
+			if(min_distance > distance)
 			{
 				min_distance = distance;
-				index = 0;
-			}
-			else
-			{
-				if(min_distance > distance)
-				{
-					min_distance = distance;
-					index = j;
-				}
+				index = j;
 			}
 		}
 		landmark_index[i] = index;
-		offset(i, 0) = feature_pool(i, 0) - global_mean_landmarks(index, 0);
-		offset(i, 1) = feature_pool(i, 1) - global_mean_landmarks(index, 1);
+		offset.row(i) = feature_pool.row(i) - global_mean_landmarks.row(index);
 	}
 }
 

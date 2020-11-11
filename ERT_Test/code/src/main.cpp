@@ -68,7 +68,9 @@ int main(int argc, char* argv[])
 		cv::rectangle(colorImage, rect, cv::Scalar(255, 255, 255), 1, 1, 0);
 	};
 
-	Eigen::MatrixX2f landmark;
+	Eigen::MatrixX2f landmark(ert.get_landmark_number(), 2);
+	landmark.setZero();
+
 	if (!input_filename.empty()) {
 		auto colorImage = cv::imread(input_filename);
 		cv::Mat_<uchar> image;
@@ -104,11 +106,23 @@ int main(int argc, char* argv[])
 			cap >> colorImage;
 			cv::cvtColor(colorImage, image, cv::COLOR_BGR2GRAY);
 
-			std::vector<cv::Rect> faces_temp;
-			haar_cascade.detectMultiScale(image, faces_temp, 1.1, 2, 0, cv::Size(30, 30));
-			if (!faces_temp.empty()) {
-				ert.find_landmark(image, convert_cv_rect(faces_temp[0]), landmark);
-				draw_landmark_rect(colorImage, faces_temp[0], landmark);
+			bool face_found = false;
+			auto bbMin = landmark.colwise().minCoeff();
+			auto bbMax = landmark.colwise().maxCoeff();
+			auto bbSize = (bbMax - bbMin).prod();
+			if (bbSize > 100.0f && bbSize <= (float)(image.rows * image.cols))
+				face_found = true;
+			if (face_found) {
+				ert.find_landmark(image, landmark);
+				draw_landmark_rect(colorImage, cv::Rect(0, 0, 1, 1), landmark);
+			}
+			else {
+				std::vector<cv::Rect> faces_temp;
+				haar_cascade.detectMultiScale(image, faces_temp, 1.1, 2, 0, cv::Size(30, 30));
+				if (!faces_temp.empty()) {
+					ert.find_landmark(image, convert_cv_rect(faces_temp[0]), landmark);
+					draw_landmark_rect(colorImage, faces_temp[0], landmark);
+				}
 			}
 
 			cv::imshow("face", colorImage);

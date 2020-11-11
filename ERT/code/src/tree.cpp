@@ -32,21 +32,18 @@ void Tree::generate_candidate_feature(
 	 	float prob;
 	 	float distance;
 
-	 	do{
+	 	do {
 	 		_x_index = std::rand() % landmark_index.size();
 	 		_y_index = std::rand() % landmark_index.size();
-	 		distance = std::pow(feature_pool(_x_index, 0) - feature_pool(_y_index, 0), 2) + std::pow(feature_pool(_x_index, 1) - feature_pool(_y_index, 1), 2);
+	 		distance = (feature_pool.row(_x_index) - feature_pool.row(_y_index)).squaredNorm();
 	 		prob = std::exp(-distance / lambda);
 	 		prob_threshold = std::rand() / (float)(RAND_MAX);
-	 	}while(_x_index == _y_index || prob <= prob_threshold);
+	 	} while (_x_index == _y_index || prob <= prob_threshold);
 
-	 	candidate_landmark_index[2 * i] = landmark_index[_x_index];
-	 	candidate_landmark_index[2 * i + 1] = landmark_index[_y_index];
-
-	 	candidate_feature_offset(2 * i, 0) = offset(_x_index, 0);
-	 	candidate_feature_offset(2 * i, 1) = offset(_x_index, 1);
-	 	candidate_feature_offset(2 * i + 1, 0) = offset(_y_index, 0);
-	 	candidate_feature_offset(2 * i + 1, 1) = offset(_y_index, 1);
+	 	candidate_landmark_index[2*i  ] = landmark_index[_x_index];
+	 	candidate_landmark_index[2*i+1] = landmark_index[_y_index];
+	 	candidate_feature_offset.row(2*i  ) = offset.row(_x_index);
+	 	candidate_feature_offset.row(2*i+1) = offset.row(_y_index);
 
 	 	threshold[i] = (float)(((std::rand() / (RAND_MAX + 1.0) * std::numeric_limits<uchar>::max()) - 128) / 2.0);
 	 }
@@ -68,9 +65,9 @@ float Tree::split_node(
 	int left_number = 0;
 	int right_number = 0;
 
-	for(int i = 0; i < data.size(); ++i)
+	for (int i = 0; i < data.size(); ++i)
 	{
-		if(data[i].tree_index == index)
+		if (data[i].tree_index == index)
 		{
 			bool left_node = node.evaluate(
 				data[i].image,
@@ -82,14 +79,14 @@ float Tree::split_node(
 
 			data[i].tree_index = 2 * index + (left_node ? 1 : 2);
 
-			if(!whether_change_index)
+			if (!whether_change_index)
 			{
-				if(data[i].tree_index == 2 * index + 1)
+				if (data[i].tree_index == 2 * index + 1)
 				{
 					mean_left += (data[i].landmarks_truth_normalization - data[i].landmarks_cur_normalization);
 					++left_number;	
 				}
-				else if(data[i].tree_index == 2 * index + 2)
+				else if (data[i].tree_index == 2 * index + 2)
 				{
 					mean_right += (data[i].landmarks_truth_normalization - data[i].landmarks_cur_normalization);
 					++right_number;
@@ -118,33 +115,26 @@ void Tree::train(std::vector<Sample> &data, std::vector<Sample> &validationdata,
 		std::vector<int> candidate_landmark_index(feature_number_of_node);
 		std::vector<float> threshold(feature_number_of_node / 2);
 		Tree::generate_candidate_feature(feature_pool, offset, landmark_index, candidate_feature_offset, candidate_landmark_index, threshold);
-		float max_score;
-		int index_max_score;
+
+		float max_score = 0.0f;
+		int index_max_score = -1;
 		
 		for(int j = 0; j < feature_number_of_node / 2; ++j)
 		{
 			float score = Tree::split_node(
 				data,
 				Node(
-					candidate_landmark_index[2 * j],
-					candidate_landmark_index[2 * j + 1],
-					candidate_feature_offset.row(2 * j),
-					candidate_feature_offset.row(2 * j + 1),
+					candidate_landmark_index[2*j  ],
+					candidate_landmark_index[2*j+1],
+					candidate_feature_offset.row(2*j  ),
+					candidate_feature_offset.row(2*j+1),
 					threshold[j]),
 				i, false);
 			
-			if(j == 0)
+			if(j == 0 || max_score < score)
 			{
 				max_score = score;
-				index_max_score = 0;
-			}
-			else
-			{
-				if(max_score < score)
-				{
-					max_score = score;
-					index_max_score = 2 * j;
-				}
+				index_max_score = 2 * j;
 			}
 		}
 		
