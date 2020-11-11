@@ -194,10 +194,8 @@ void generate_validation_data(std::vector<Sample> &data, const Eigen::MatrixX2f 
 		data[i].scale_rotate_normalization = scale_rotate;
 		data[i].transform_normalization = transform;
 
-		compute_similarity_transform(origin, target, scale_rotate, transform);
-		
-		data[i].scale_rotate_unnormalization = scale_rotate;
-		data[i].transform_unnormalization = transform;			
+		data[i].scale_rotate_unnormalization = scale_rotate.inverse();
+		data[i].transform_unnormalization = - transform * scale_rotate.inverse();
 
 		normalization(data[i].landmarks_truth_normalization, data[i].landmarks_truth, data[i].scale_rotate_normalization, data[i].transform_normalization);
 
